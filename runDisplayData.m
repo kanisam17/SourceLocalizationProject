@@ -2,6 +2,9 @@ clear; clc;
 displaySingleGroupFlag=0; % When a single group is provided, stimulus and baseline epochs are compared
 useMedianFlag=1;
 
+thres=1; % only subjects who have delta power above this (in dB) are selected. Set to a low value such as -inf to take all subjects
+useCommonSubjectsFlag=0; % if set to 1, only subjects for which delta power is more than threshold for all frequencies are chosen
+
 %%%%%%%%%%%%%%%%%%%%%%%%%% Display Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 displaySettings.fontSizeLarge = 10; displaySettings.tickLengthMedium = [0.025 0];
 colormap magma;
@@ -41,7 +44,6 @@ spatialFrequenciesToRemove=[];
 dataForDisplay = combineAnalyzedData(pwd,uniqueSubjectNames,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange,spatialFrequenciesToRemove,0);
 
 %%%%%%%%%%%%%%%%%%%%%%%% Find Useful Subjects %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-thres = 1;
 
 [ageList,genderList,cdrList] = getDemographicDetails(projectName,uniqueSubjectNames);
 healthyPos = strcmp(cdrList,'HV');
@@ -50,18 +52,31 @@ ageGroup2Pos = (ageList>=65) & healthyPos; strList{2} = 'Elderly';
     
 numFreqRanges = length(dataForDisplay.rangeNames);
 
-hPlots = getPlotHandles(numFreqRanges,6,[0.05 0.05 0.9 0.9],0.02,0.05);
+hPlots = getPlotHandles(numFreqRanges,3,[0.05 0.05 0.4 0.9],0.02,0.05);
 
 dataDeltaPSD = 10*(dataForDisplay.logSTPowerVsFreqAllSubjects - dataForDisplay.logBLPowerVsFreqAllSubjects);
 cLims = [-2 2];
 noseDir = '+X';
 chanlocs = getMontageDetails(refType);
 
+% Select common good subjects if needed
+goodSubjectPosAll = zeros(size(dataForDisplay.powerDBAllSubjects));
 for i=1:numFreqRanges
     if strcmp(dataForDisplay.rangeNames{i},'Alpha')
-        goodSubjectPos = dataForDisplay.powerDBAllSubjects(:,i)<-thres;
+        goodSubjectPosAll(:,i) = dataForDisplay.powerDBAllSubjects(:,i)<-thres;
     else
-        goodSubjectPos = dataForDisplay.powerDBAllSubjects(:,i)>thres;
+        goodSubjectPosAll(:,i) = dataForDisplay.powerDBAllSubjects(:,i)>thres;
+    end
+end
+if useCommonSubjectsFlag 
+    goodSubjectPosCommon = all(goodSubjectPosAll,2);
+end
+
+for i=1:numFreqRanges
+    if useCommonSubjectsFlag
+        goodSubjectPos = goodSubjectPosCommon;
+    else
+        goodSubjectPos = goodSubjectPosAll(:,i);
     end
     
     clear goodPos subjectNameListFinal
