@@ -47,8 +47,8 @@ dataForDisplay = combineAnalyzedData(pwd,uniqueSubjectNames,projectName,refType,
 
 [ageList,genderList,cdrList] = getDemographicDetails(projectName,uniqueSubjectNames);
 healthyPos = strcmp(cdrList,'HV');
-ageGroup1Pos = (ageList<65) & healthyPos; strList{1} = 'MiddleAged';
-ageGroup2Pos = (ageList>=65) & healthyPos; strList{2} = 'Elderly';
+ageGroup1Pos = (ageList<65) & healthyPos; strList{1} = 'mid';
+ageGroup2Pos = (ageList>=65) & healthyPos; strList{2} = 'old';
     
 numFreqRanges = length(dataForDisplay.rangeNames);
 
@@ -118,6 +118,10 @@ for i=1:numFreqRanges
         caxis(cLims);
     end
 end
+
+%%%%%%%%%%%%%%%%%%%%%% Source Localization Analysis %%%%%%%%%%%%%%%%%%%%%%%
+folderSourceLocalization = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\Kanishka_SourceLocalizationProject\data\sLORETA_Thres1_Alpha';
+
 function chanlocs = getMontageDetails(refType)
 
 capLayout = 'actiCap64';
