@@ -2,18 +2,19 @@ clear; clc;
 displaySingleGroupFlag=0; % When a single group is provided, stimulus and baseline epochs are compared
 useMedianFlag=1;
 
-thres=1; % only subjects who have delta power above this (in dB) are selected. Set to a low value such as -inf to take all subjects
-useCommonSubjectsFlag=0; % if set to 1, only subjects for which delta power is more than threshold for all frequencies are chosen
+thres=-10; % only subjects who have delta power above this (in dB) are selected. Set to a low value such as -inf to take all subjects
+useCommonSubjectsFlag=1; % if set to 1, only subjects for which delta power is more than threshold for all frequencies are chosen
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% Display Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 displaySettings.fontSizeLarge = 10; displaySettings.tickLengthMedium = [0.025 0];
-colormap magma;
+% colormap magma;
+colormap jet;
 colorNames = hot(8); colorNames([1:3,end-2:end],:) = [];
 displaySettings.colorNames = colorNames;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mandatory fixed options
-folderSourceString = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\TLSAEEGProject'; % Indicate the parent folder of decimatedData
+%folderSourceString = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\TLSAEEGProject'; % Indicate the parent folder of decimatedData
 projectName = 'ADGammaProject'; % Only this dataset, which is the main TLSA dataset, is configured as of now. Other options - 'AgeProjectRound1' and 'VisualGamma' may not work
 stRange = [0.25 0.75];
 
@@ -55,7 +56,7 @@ numFreqRanges = length(dataForDisplay.rangeNames);
 hPlots = getPlotHandles(numFreqRanges,3,[0.05 0.05 0.4 0.9],0.02,0.05);
 
 dataDeltaPSD = 10*(dataForDisplay.logSTPowerVsFreqAllSubjects - dataForDisplay.logBLPowerVsFreqAllSubjects);
-cLims = [-2 2];
+cLims = [-1.25 1.25];
 noseDir = '+X';
 chanlocs = getMontageDetails(refType);
 
@@ -71,6 +72,8 @@ end
 if useCommonSubjectsFlag 
     goodSubjectPosCommon = all(goodSubjectPosAll,2);
 end
+
+plotPosition = [2 3 1]; % The data are saved as SG, FG, Alpha. But we want to plot such in order: Alpha, SG, FG.
 
 for i=1:numFreqRanges
     if useCommonSubjectsFlag
@@ -100,14 +103,15 @@ for i=1:numFreqRanges
         displaySignificanceFlag=1;
     end
 
-    displayAndcompareData(hPlots(i,1),deltaPSD,dataForDisplay.freqVals,displaySettings,2*cLims,displaySignificanceFlag,useMedianFlag);
-    hold(hPlots(i,1),'on');
-    plot(hPlots(i,1),dataForDisplay.freqVals,zeros(1,length(dataForDisplay.freqVals)),'k');
-    title(hPlots(i,1),titleStr);
+    plotPos = plotPosition(i);
+    displayAndcompareData(hPlots(plotPos,1),deltaPSD,dataForDisplay.freqVals,displaySettings,cLims,displaySignificanceFlag,useMedianFlag);
+    hold(hPlots(plotPos,1),'on');
+    plot(hPlots(plotPos,1),dataForDisplay.freqVals,zeros(1,length(dataForDisplay.freqVals)),'k');
+    title(hPlots(plotPos,1),[dataForDisplay.rangeNames{i} ', ' titleStr]);
     
     numGroups = length(subjectNameListFinal);   
     for j=1:numGroups        
-        axes(hPlots(i,1+j)); %#ok<LAXES>
+        axes(hPlots(plotPos,1+j)); %#ok<LAXES>
         if useMedianFlag
             x = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,goodPos{j}),3));
         else
@@ -120,7 +124,44 @@ for i=1:numFreqRanges
 end
 
 %%%%%%%%%%%%%%%%%%%%%% Source Localization Analysis %%%%%%%%%%%%%%%%%%%%%%%
-folderSourceLocalization = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\Kanishka_SourceLocalizationProject\data\sLORETA_Thres1_Alpha';
+disp('Getting sLORETA data');
+folderLORETA = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\Kanishka_SourceLocalizationProject\data\sLORETA_Thres10';
+[allDataBL,allDataST] = getLORETAData(subjectNameListFinal,strList,folderLORETA);
+[posList,xyz,areaList] = getVoxelInfo;
+numAreas = length(areaList);
+colorNamesAreas = jet(numAreas);
+
+hPlotsSource = getPlotHandles(numFreqRanges,5,[0.5 0.05 0.475 0.9],0.02,0.05);
+for i=1:numFreqRanges
+    
+    % First, we compare stim versus baseline responses, separately for each group
+    for j=1:2
+        compareData{1} = squeeze(allDataBL{j}(:,i,:));
+        compareData{2} = squeeze(allDataST{j}(:,i,:));
+
+        deltaPower = 10*(log10(compareData{2}) - log10(compareData{1}));
+        if useMedianFlag
+            mData = median(deltaPower);
+            %sData = getSEMedian(deltaPower);
+        else
+            mData = mean(deltaPower);
+            sData = std(deltaPower);
+        end
+        scatter3(hPlotsSource(i,2*(j-1)+1),xyz(:,1),xyz(:,2),xyz(:,3),1,mData);
+        caxis(hPlotsSource(i,2*(j-1)+1),cLims);
+        
+        startPos=0;
+        hold(hPlotsSource(i,2*j),'on');
+        for k=1:numAreas
+            mDataTMP = (mData(posList{k}));
+            numEntries = length(mDataTMP);
+            plot(hPlotsSource(i,2*j),startPos+(1:numEntries),mDataTMP,'color',colorNamesAreas(k,:));
+            startPos = startPos+numEntries;
+        end
+        ylim(hPlotsSource(i,2*j),cLims);
+    end
+    % displayAndcompareData(hPlotsSource(i,3),compareData,1:6239,displaySettings,[],displaySignificanceFlag,useMedianFlag);
+end
 
 function chanlocs = getMontageDetails(refType)
 
