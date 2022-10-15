@@ -131,36 +131,85 @@ folderLORETA = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\Kani
 numAreas = length(areaList);
 colorNamesAreas = jet(numAreas);
 
-hPlotsSource = getPlotHandles(numFreqRanges,5,[0.5 0.05 0.475 0.9],0.02,0.05);
+hPlotsSource = getPlotHandles(numFreqRanges,3,[0.5 0.05 0.475 0.9],0.02,0.05,0);
+
+displayOption = 1; % 1 for stats, 2 for change in power, 3 for raw stimulus power
+pThreshold = 0.05;
+fractionList = zeros(numFreqRanges,2,numAreas);
+
 for i=1:numFreqRanges
     
     % First, we compare stim versus baseline responses, separately for each group
+    maxData = zeros(1,2);
+    minData = zeros(1,2);
+
     for j=1:2
         compareData{1} = squeeze(allDataBL{j}(:,i,:));
         compareData{2} = squeeze(allDataST{j}(:,i,:));
 
-        deltaPower = 10*(log10(compareData{2}) - log10(compareData{1}));
-        if useMedianFlag
-            mData = median(deltaPower);
-            %sData = getSEMedian(deltaPower);
-        else
-            mData = mean(deltaPower);
-            sData = std(deltaPower);
+        if displayOption==1 % Statistical testing
+            
+            numEntries = length(compareData{1});
+            pVals = zeros(1,numEntries);
+            statVals = zeros(1,numEntries);
+            
+            for k=1:numEntries
+                d1 = (squeeze(compareData{1}(:,k)));
+                d2 = (squeeze(compareData{2}(:,k)));
+                
+                if useMedianFlag
+                    [pVals(k),~,stats] = ranksum(d1,d2);
+                    statVals(k) = stats.zval;
+                else
+                    [~,pVals(k),~,stats]=ttest(d1,d2); % only tests 2 groups
+                    statVals(k) = stats.tstat;
+                end
+            end
+            mData = statVals;
+            
+            for k=1:numAreas
+                pDataTMP = (pVals(posList{k}));
+                fractionList(i,j,k) = length(find(pDataTMP<pThreshold))/length(pDataTMP);
+            end
+            
+        elseif displayOption==2 % Change in power
+            
+            % Change in power from baseline
+            deltaPower = 10*(log10(compareData{2}) - log10(compareData{1})); % Does not really work well (too noisy)
+            if useMedianFlag
+                mData = median(deltaPower);
+            else
+                mData = mean(deltaPower);
+            end
+            
+        elseif displayOption==3 % Raw Stimulus power (log scale)
+            stPower = log10(compareData{2});
+            if useMedianFlag
+                mData = median(stPower);
+            else
+                mData = mean(stPower);
+            end
         end
-        scatter3(hPlotsSource(i,2*(j-1)+1),xyz(:,1),xyz(:,2),xyz(:,3),1,mData);
-        caxis(hPlotsSource(i,2*(j-1)+1),cLims);
+
+        maxData(j) = max(mData);
+        minData(j) = min(mData);
         
-        startPos=0;
-        hold(hPlotsSource(i,2*j),'on');
-        for k=1:numAreas
-            mDataTMP = (mData(posList{k}));
-            numEntries = length(mDataTMP);
-            plot(hPlotsSource(i,2*j),startPos+(1:numEntries),mDataTMP,'color',colorNamesAreas(k,:));
-            startPos = startPos+numEntries;
-        end
-        ylim(hPlotsSource(i,2*j),cLims);
+        % Plot Data
+        scatter3(hPlotsSource(i,j),xyz(:,1),xyz(:,2),xyz(:,3),1,mData);
+        
+%         startPos=0;
+%         hold(hPlotsSource(i,2*j),'on');
+%         for k=1:numAreas
+%             mDataTMP = (mData(posList{k}));
+%             numEntries = length(mDataTMP);
+%             plot(hPlotsSource(i,2*j),startPos+(1:numEntries),mDataTMP,'color',colorNamesAreas(k,:));
+%             startPos = startPos+numEntries;
+%         end
     end
-    % displayAndcompareData(hPlotsSource(i,3),compareData,1:6239,displaySettings,[],displaySignificanceFlag,useMedianFlag);
+    for j=1:2
+        caxis(hPlotsSource(i,j),[min(minData) max(maxData)]);
+        colorbar(hPlotsSource(i,j));
+    end
 end
 
 function chanlocs = getMontageDetails(refType)
