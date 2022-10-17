@@ -126,7 +126,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%% Source Localization Analysis %%%%%%%%%%%%%%%%%%%%%%%
 disp('Getting sLORETA data');
 folderLORETA = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\Kanishka_SourceLocalizationProject\data\sLORETA_Thres10';
-[allDataBL,allDataST] = getLORETAData(subjectNameListFinal,strList,folderLORETA);
+[allDataBL,allDataST,alltStats,allpVals] = getLORETAData(subjectNameListFinal,strList,folderLORETA);
 [posList,xyz,areaList] = getVoxelInfo;
 numAreas = length(areaList);
 colorNamesAreas = jet(numAreas);
@@ -135,7 +135,6 @@ hPlotsSource = getPlotHandles(numFreqRanges,3,[0.5 0.05 0.475 0.9],0.02,0.05,0);
 
 displayOption = 1; % 1 for stats, 2 for change in power, 3 for raw stimulus power
 pThreshold = 0.05;
-fractionList = zeros(numFreqRanges,2,numAreas);
 
 for i=1:numFreqRanges
     
@@ -149,28 +148,21 @@ for i=1:numFreqRanges
 
         if displayOption==1 % Statistical testing
             
-            numEntries = length(compareData{1});
-            pVals = zeros(1,numEntries);
-            statVals = zeros(1,numEntries);
-            
-            for k=1:numEntries
-                d1 = (squeeze(compareData{1}(:,k)));
-                d2 = (squeeze(compareData{2}(:,k)));
-                
-                if useMedianFlag
-                    [pVals(k),~,stats] = ranksum(d1,d2);
-                    statVals(k) = stats.zval;
-                else
-                    [~,pVals(k),~,stats]=ttest(d1,d2); % only tests 2 groups
-                    statVals(k) = stats.tstat;
-                end
-            end
+            statVals = squeeze(mean(alltStats{j}(:,i,:),1));          
             mData = statVals;
             
-            for k=1:numAreas
-                pDataTMP = (pVals(posList{k}));
-                fractionList(i,j,k) = length(find(pDataTMP<pThreshold))/length(pDataTMP);
+            % from the p-values, compute fraction for each subject
+            numSubjects = size(allpVals{j},1);
+            
+            fractionList = zeros(numSubjects,numAreas);
+            for s=1:numSubjects
+                pVals = squeeze(allpVals{j}(s,i,:));
+                for k=1:numAreas
+                    pDataTMP = (pVals(posList{k}));
+                    fractionList(s,k) = length(find(pDataTMP<pThreshold))/length(pDataTMP);
+                end
             end
+            mFractionList(i,j,:) = mean(fractionList);
             
         elseif displayOption==2 % Change in power
             
@@ -196,15 +188,6 @@ for i=1:numFreqRanges
         
         % Plot Data
         scatter3(hPlotsSource(i,j),xyz(:,1),xyz(:,2),xyz(:,3),1,mData);
-        
-%         startPos=0;
-%         hold(hPlotsSource(i,2*j),'on');
-%         for k=1:numAreas
-%             mDataTMP = (mData(posList{k}));
-%             numEntries = length(mDataTMP);
-%             plot(hPlotsSource(i,2*j),startPos+(1:numEntries),mDataTMP,'color',colorNamesAreas(k,:));
-%             startPos = startPos+numEntries;
-%         end
     end
     for j=1:2
         caxis(hPlotsSource(i,j),[min(minData) max(maxData)]);
