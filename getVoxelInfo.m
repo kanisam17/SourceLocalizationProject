@@ -14,8 +14,8 @@ if isempty(areaList)
     areaList{4} = 'Frontal';
 end
 
-[allCoordinates,tmp] = xlsread('voxelInfo.csv');
-xyz = allCoordinates(:,1:3);
+[allCoordinates,tmp] = xlsread('voxelInfo.xlsx');
+xyz = allCoordinates;
 labels = tmp(:,1);
 uniqueLabels = unique(labels);
 numUniqueLabels = length(uniqueLabels);

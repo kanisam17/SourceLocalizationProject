@@ -131,9 +131,9 @@ folderLORETA = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\Kani
 numAreas = length(areaList);
 colorNamesAreas = jet(numAreas);
 
-hPlotsSource = getPlotHandles(numFreqRanges,3,[0.5 0.05 0.475 0.9],0.02,0.05,0);
-
 displayOption = 1; % 1 for stats, 2 for change in power, 3 for raw stimulus power
+
+hPlotsSource = getPlotHandles(numFreqRanges,3,[0.5 0.05 0.475 0.9],0.02,0.05,0);
 pThreshold = 0.05;
 
 for i=1:numFreqRanges
