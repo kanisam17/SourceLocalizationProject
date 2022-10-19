@@ -9,7 +9,6 @@ alltStats = cell(1,2);
 allpVals = cell(1,2);
 
 for i=1:2
-    disp(dataStr{i});
     subjectNames = subjectNameListFinal{i};
 
     clear dataBL dataST tStats pVals
@@ -17,7 +16,7 @@ for i=1:2
         subjectName = subjectNames{j};
         tmp = load(fullfile(folderLORETA,dataStr{i},[subjectName '.mat']));
         
-        dataBL(j,:,:) = tmp.mDataBL;
+        dataBL(j,:,:) = tmp.mDataBL; %#ok<*AGROW>
         dataST(j,:,:) = tmp.mDataST;
         tStats(j,:,:) = tmp.tStats;
         pVals(j,:,:) = tmp.pVals;

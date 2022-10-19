@@ -1,20 +1,12 @@
 clear; clc;
-displaySingleGroupFlag=0; % When a single group is provided, stimulus and baseline epochs are compared
-useMedianFlag=1;
 
 thres=-10; % only subjects who have delta power above this (in dB) are selected. Set to a low value such as -inf to take all subjects
 useCommonSubjectsFlag=1; % if set to 1, only subjects for which delta power is more than threshold for all frequencies are chosen
+useMedianFlag=1;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%% Display Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-displaySettings.fontSizeLarge = 10; displaySettings.tickLengthMedium = [0.025 0];
-% colormap magma;
-colormap jet;
-colorNames = hot(8); colorNames([1:3,end-2:end],:) = [];
-displaySettings.colorNames = colorNames;
-
+folderLORETA = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\Kanishka_SourceLocalizationProject\data\sLORETA_Thres10'; % Folder where the output of LORETA is saved
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mandatory fixed options
-%folderSourceString = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\TLSAEEGProject'; % Indicate the parent folder of decimatedData
 projectName = 'ADGammaProject'; % Only this dataset, which is the main TLSA dataset, is configured as of now. Other options - 'AgeProjectRound1' and 'VisualGamma' may not work
 stRange = [0.25 0.75];
 
@@ -44,21 +36,20 @@ gamma1Range = [20 34]; gamma2Range = [36 66]; alphaRange = [8 12];
 spatialFrequenciesToRemove=[];
 dataForDisplay = combineAnalyzedData(pwd,uniqueSubjectNames,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange,spatialFrequenciesToRemove,0);
 
-%%%%%%%%%%%%%%%%%%%%%%%% Find Useful Subjects %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Here data is saved in the order [SG, FG, alpha]. Change to [alpha SG FG];
+newOrderList = [3 1 2];
+dataForDisplay.rangeNames = dataForDisplay.rangeNames(newOrderList);
+dataForDisplay.powerDBAllSubjects = dataForDisplay.powerDBAllSubjects(:,newOrderList);
+dataForDisplay.powerDBTopoAllSubjects = dataForDisplay.powerDBTopoAllSubjects(:,newOrderList,:);
 
+%%%%%%%%%%%%%%%%%%%%%%%% Find Useful Subjects %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [ageList,genderList,cdrList] = getDemographicDetails(projectName,uniqueSubjectNames);
 healthyPos = strcmp(cdrList,'HV');
 ageGroup1Pos = (ageList<65) & healthyPos; strList{1} = 'mid';
 ageGroup2Pos = (ageList>=65) & healthyPos; strList{2} = 'old';
     
 numFreqRanges = length(dataForDisplay.rangeNames);
-
-hPlots = getPlotHandles(numFreqRanges,3,[0.05 0.05 0.4 0.9],0.02,0.05);
-
 dataDeltaPSD = 10*(dataForDisplay.logSTPowerVsFreqAllSubjects - dataForDisplay.logBLPowerVsFreqAllSubjects);
-cLims = [-1.25 1.25];
-noseDir = '+X';
-chanlocs = getMontageDetails(refType);
 
 % Select common good subjects if needed
 goodSubjectPosAll = zeros(size(dataForDisplay.powerDBAllSubjects));
@@ -73,233 +64,45 @@ if useCommonSubjectsFlag
     goodSubjectPosCommon = all(goodSubjectPosAll,2);
 end
 
-plotPosition = [2 3 1]; % The data are saved as SG, FG, Alpha. But we want to plot such in order: Alpha, SG, FG.
+% Generate plots with 9 columns
+% 1) deltaPSD, 2) topoBL, 3) topoST, 
+% 4-5) sourceBL & sourceST - change in power
+% 6-7) sourceBL & sourceST - tStat
+% 8) percentSignificant - barplot
+% 9) percentSignificant vs distance from peak
+
+hPlots = getPlotHandles(numFreqRanges,9,[0.05 0.05 0.9 0.9],0.02,0.05);
 
 for i=1:numFreqRanges
     if useCommonSubjectsFlag
         goodSubjectPos = goodSubjectPosCommon;
     else
-        goodSubjectPos = goodSubjectPosAll(:,i);
+        goodSubjectPos = goodSubjectPosAll(:,i); %#ok<*UNRCH>
     end
     
     clear goodPos subjectNameListFinal
     gp1 = ageGroup1Pos & goodSubjectPos';
     gp2 = ageGroup2Pos & goodSubjectPos';
+
+    subjectNameListFinal{1} = uniqueSubjectNames(gp1);
+    subjectNameListFinal{2} = uniqueSubjectNames(gp2);
+    deltaPSD{1} = dataDeltaPSD(gp1,:);
+    deltaPSD{2} = dataDeltaPSD(gp2,:);
     
-    if displaySingleGroupFlag
-        goodPos{1} = gp1 | gp2;
-        subjectNameListFinal{1} = uniqueSubjectNames(goodPos{1});
-        deltaPSD{1} = dataDeltaPSD(goodPos{1},:);
-        titleStr = ['Combined(' num2str(length(subjectNameListFinal{1})) ')'];
-        displaySignificanceFlag=0;
-    else
-        goodPos{1} = gp1; %#ok<*UNRCH>
-        goodPos{2} = gp2;
-        subjectNameListFinal{1} = uniqueSubjectNames(gp1);
-        subjectNameListFinal{2} = uniqueSubjectNames(gp2);
-        deltaPSD{1} = dataDeltaPSD(goodPos{1},:);
-        deltaPSD{2} = dataDeltaPSD(goodPos{2},:);
-        titleStr = [strList{1} '(' num2str(length(subjectNameListFinal{1})) '),' strList{2} '(' num2str(length(subjectNameListFinal{2})) ')'];
-        displaySignificanceFlag=1;
-    end
-
-    plotPos = plotPosition(i);
-    displayAndcompareData(hPlots(plotPos,1),deltaPSD,dataForDisplay.freqVals,displaySettings,cLims,displaySignificanceFlag,useMedianFlag);
-    hold(hPlots(plotPos,1),'on');
-    plot(hPlots(plotPos,1),dataForDisplay.freqVals,zeros(1,length(dataForDisplay.freqVals)),'k');
-    title(hPlots(plotPos,1),[dataForDisplay.rangeNames{i} ', ' titleStr]);
-    
-    numGroups = length(subjectNameListFinal);   
-    for j=1:numGroups        
-        axes(hPlots(plotPos,1+j)); %#ok<LAXES>
-        if useMedianFlag
-            x = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,goodPos{j}),3));
-        else
-            x = squeeze(nanmean(dataForDisplay.powerDBTopoAllSubjects(:,i,goodPos{j}),3));
-        end
-        x(isnan(x)) = 999;
-        topoplot_murty(x,chanlocs,'electrodes','off','style','blank','drawaxis','off','nosedir',noseDir,'emarkercolors',x);
-        caxis(cLims);
-    end
-end
-
-%%%%%%%%%%%%%%%%%%%%%% Source Localization Analysis %%%%%%%%%%%%%%%%%%%%%%%
-disp('Getting sLORETA data');
-folderLORETA = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\Kanishka_SourceLocalizationProject\data\sLORETA_Thres10';
-[allDataBL,allDataST,alltStats,allpVals] = getLORETAData(subjectNameListFinal,strList,folderLORETA);
-[posList,xyz,areaList] = getVoxelInfo;
-numAreas = length(areaList);
-colorNamesAreas = jet(numAreas);
-
-displayOption = 1; % 1 for stats, 2 for change in power, 3 for raw stimulus power
-
-hPlotsSource = getPlotHandles(numFreqRanges,3,[0.5 0.05 0.475 0.9],0.02,0.05,0);
-pThreshold = 0.05;
-
-for i=1:numFreqRanges
-    
-    % First, we compare stim versus baseline responses, separately for each group
-    maxData = zeros(1,2);
-    minData = zeros(1,2);
-
-    for j=1:2
-        compareData{1} = squeeze(allDataBL{j}(:,i,:));
-        compareData{2} = squeeze(allDataST{j}(:,i,:));
-
-        if displayOption==1 % Statistical testing
-            
-            statVals = squeeze(mean(alltStats{j}(:,i,:),1));          
-            mData = statVals;
-            
-            % from the p-values, compute fraction for each subject
-            numSubjects = size(allpVals{j},1);
-            
-            fractionList = zeros(numSubjects,numAreas);
-            for s=1:numSubjects
-                pVals = squeeze(allpVals{j}(s,i,:));
-                for k=1:numAreas
-                    pDataTMP = (pVals(posList{k}));
-                    fractionList(s,k) = length(find(pDataTMP<pThreshold))/length(pDataTMP);
-                end
-            end
-            mFractionList(i,j,:) = mean(fractionList);
-            
-        elseif displayOption==2 % Change in power
-            
-            % Change in power from baseline
-            deltaPower = 10*(log10(compareData{2}) - log10(compareData{1})); % Does not really work well (too noisy)
-            if useMedianFlag
-                mData = median(deltaPower);
-            else
-                mData = mean(deltaPower);
-            end
-            
-        elseif displayOption==3 % Raw Stimulus power (log scale)
-            stPower = log10(compareData{2});
-            if useMedianFlag
-                mData = median(stPower);
-            else
-                mData = mean(stPower);
-            end
-        end
-
-        maxData(j) = max(mData);
-        minData(j) = min(mData);
-        
-        % Plot Data
-        scatter3(hPlotsSource(i,j),xyz(:,1),xyz(:,2),xyz(:,3),1,mData);
-    end
-    for j=1:2
-        caxis(hPlotsSource(i,j),[min(minData) max(maxData)]);
-        colorbar(hPlotsSource(i,j));
-    end
-end
-
-function chanlocs = getMontageDetails(refType)
-
-capLayout = 'actiCap64';
-clear cL bL chanlocs iElec electrodeList noseDir
-switch refType
-    case 'unipolar'
-        cL = load([capLayout '.mat']);
-        chanlocs = cL.chanlocs;
-    case 'bipolar'
-        cL = load(['bipolarChanlocs' capLayout '.mat']);
-        chanlocs = cL.eloc;
-end
-end
-function displayAndcompareData(hPlot,data,xs,displaySettings,yLims,displaySignificanceFlag,useMedianFlag,smoothSigma,nonMatchedFlag)
-
-if ~exist('displaySignificanceFlag','var'); displaySignificanceFlag=0;  end
-if ~exist('useMedianFlag','var');           useMedianFlag=1;            end
-if ~exist('smoothSigma','var');             smoothSigma=[];             end
-if ~exist('nonMatchedFlag','var');          nonMatchedFlag=1;           end
-
-if useMedianFlag
-    getLoc = @(g)(squeeze(median(g,1)));
-else
-    getLoc = @(g)(squeeze(mean(g,1)));
-end
-
-numGroups = length(data);
-
-if ~isempty(smoothSigma)
-    windowLen = 5*smoothSigma;
-    window = exp(-0.5*(((1:windowLen) - (windowLen+1)/2)/smoothSigma).^2);
-    window = window/sum(window); %sqrt(sum(window.^2));
-    
-    for i=1:numGroups
-        data{i} = convn(data{i},window,'same');
-    end
-end
-
-axes(hPlot);
-for i=1:numGroups
-    clear bootStat mData sData
-    mData = getLoc(data{i}); 
     if useMedianFlag
-        bootStat = bootstrp(1000,getLoc,data{i});
-        sData = std(bootStat);
+        topoData{1} = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,gp1),3));
+        topoData{2} = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,gp2),3));
     else
-        sData = std(data{i},[],1)/sqrt(size(data{i},1));
+        topoData{1} = squeeze(nanmean(dataForDisplay.powerDBTopoAllSubjects(:,i,gp1),3));
+        topoData{2} = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,gp2),3));
     end
     
-    patch([xs';flipud(xs')],[mData'-sData';flipud(mData'+sData')],displaySettings.colorNames(i,:),'linestyle','none','FaceAlpha',0.4);
-    hold on;
-    plot(xs,mData,'color',displaySettings.colorNames(i,:),'linewidth',1);
-end
-
-set(gca,'fontsize',displaySettings.fontSizeLarge);
-set(gca,'TickDir','out','TickLength',displaySettings.tickLengthMedium);
-
-if exist('yLims','var') && ~isempty(yLims)
-    ylim(yLims);
-else
-    yLims = ylim;
-end
-
-if displaySignificanceFlag % Do significance Testing
-    
-    allData = [];
-    allIDs = [];
-    for j=1:numGroups
-        allData = cat(1,allData,data{j});
-        allIDs = cat(1,allIDs,j+zeros(size(data{j},1),1));
+    [allDataBL,allDataST,alltStats,allpVals] = getLORETAData(subjectNameListFinal,strList,folderLORETA);
+    for j=1:2
+        sourceData(j).BL = squeeze(allDataBL{j}(:,i,:)); %#ok<*SAGROW>
+        sourceData(j).ST = squeeze(allDataST{j}(:,i,:));
+        sourceData(j).tStats = squeeze(alltStats{j}(:,i,:));
+        sourceData(j).pVals = squeeze(allpVals{j}(:,i,:));
     end
-       
-   for i=1:length(xs)
-       if useMedianFlag
-           p=kruskalwallis(allData(:,i),allIDs,'off');
-       else
-           if nonMatchedFlag
-               [~,p]=ttest2(data{1}(:,i),data{2}(:,i)); % only tests 2 groups
-           else
-               [~,p]=ttest(data{1}(:,i),data{2}(:,i)); % only tests 2 groups
-           end
-       end
-       % Get patch coordinates
-       yVals = yLims(1)+[0 0 diff(yLims)/20 diff(yLims)/20];
-       
-       clear xMidPos xBegPos xEndPos
-       xMidPos = xs(i);
-       if i==1
-           xBegPos = xMidPos;
-       else
-           xBegPos = xMidPos-(xs(i)-xs(i-1))/2; 
-       end
-       if i==length(xs)
-           xEndPos = xMidPos; 
-       else
-           xEndPos = xMidPos+(xs(i+1)-xs(i))/2; 
-       end
-       clear xVals; xVals = [xBegPos xEndPos xEndPos xBegPos]';
-       
-       if (p<0.05)
-           patch(xVals,yVals,'k','linestyle','none');
-       end
-       if (p<0.01)
-           patch(xVals,yVals,'g','linestyle','none');
-       end
-   end
-end
+    displayData(hPlots(i,:),subjectNameListFinal,strList,deltaPSD,dataForDisplay.freqVals,topoData,sourceData,dataForDisplay.rangeNames{i},refType,useMedianFlag);
 end

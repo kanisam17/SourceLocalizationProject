@@ -1,0 +1,195 @@
+function displayData(hPlots,subjectNameListFinal,strList,deltaPSD,freqVals,topoData,sourceData,rangeName,refType,useMedianFlag)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% Display Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+displaySettings.fontSizeLarge = 10; displaySettings.tickLengthMedium = [0.025 0];
+% colormap magma;
+colormap jet;
+colorNames = hot(8); colorNames([1:3,end-2:end],:) = [];
+displaySettings.colorNames = colorNames;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+titleStr = [rangeName ', ' strList{1} '(' num2str(length(subjectNameListFinal{1})) '),' strList{2} '(' num2str(length(subjectNameListFinal{2})) ')'];
+cLims = [-1.25 1.25];
+
+% deltaPSD
+displayAndcompareData(hPlots(1),deltaPSD,freqVals,displaySettings,cLims,1,useMedianFlag);
+hold(hPlots(1),'on');
+plot(hPlots(1),freqVals,zeros(1,length(freqVals)),'k');
+title(hPlots(1),titleStr);
+
+% Topoplots
+noseDir = '+X';
+chanlocs = getMontageDetails(refType);
+numGroups = length(subjectNameListFinal);
+for i=1:numGroups
+    axes(hPlots(1+i)); %#ok<LAXES>
+    x = topoData{i};
+    x(isnan(x)) = 999;
+    topoplot_murty(x,chanlocs,'electrodes','off','style','blank','drawaxis','off','nosedir',noseDir,'emarkercolors',x);
+    caxis(cLims);
+    title(strList{i});
+end
+
+%%%%%%%%%%%%%%%%%%%%%% Source Localization Analysis %%%%%%%%%%%%%%%%%%%%%%%
+[posList,xyz,areaList] = getVoxelInfo;
+
+% Change in power in source space
+for i=1:numGroups
+    deltaPower = 10*(log10(sourceData(i).ST) - log10(sourceData(i).BL)); % Does not really work well (too noisy)
+    if useMedianFlag
+        mData = median(deltaPower);
+    else
+        mData = mean(deltaPower);
+    end
+    scatter3(hPlots(3+i),xyz(:,1),xyz(:,2),xyz(:,3),1,mData);
+    caxis(hPlots(3+i),cLims);
+    title(hPlots(3+i),['\DeltaPower ' strList{i}]);
+end
+
+% Plot t-stats
+for i=1:numGroups
+    statVals = sourceData(i).tStats;
+    if useMedianFlag
+        mData = median(statVals);
+    else
+        mData = mean(statVals);
+    end
+    scatter3(hPlots(5+i),xyz(:,1),xyz(:,2),xyz(:,3),1,mData);
+    caxis(hPlots(5+i),cLims);
+    title(hPlots(5+i),['tStats ' strList{i}]);
+end
+
+% plot fraction of significant voxels for each area
+numAreas = length(areaList);
+pThreshold = 0.05;
+
+mFractionList = zeros(1,numAreas);
+sFractionList = zeros(1,numAreas);
+for i=1:numGroups
+    allpVals = sourceData(i).pVals;
+    numSubjects = size(allpVals,1);
+        
+    fractionList = zeros(numSubjects,numAreas);
+    for s=1:numSubjects
+        pVals = squeeze(allpVals(s,:));
+        for k=1:numAreas
+            pDataTMP = (pVals(posList{k}));
+            fractionList(s,k) = length(find(pDataTMP<pThreshold))/length(pDataTMP);
+        end
+    end
+    mFractionList(i,:) = mean(fractionList);
+    sFractionList(i,:) = std(fractionList)/sqrt(numSubjects);
+end
+
+bar(hPlots(8),mFractionList');
+
+end
+
+function chanlocs = getMontageDetails(refType)
+
+capLayout = 'actiCap64';
+clear cL bL chanlocs iElec electrodeList noseDir
+switch refType
+    case 'unipolar'
+        cL = load([capLayout '.mat']);
+        chanlocs = cL.chanlocs;
+    case 'bipolar'
+        cL = load(['bipolarChanlocs' capLayout '.mat']);
+        chanlocs = cL.eloc;
+end
+end
+function displayAndcompareData(hPlot,data,xs,displaySettings,yLims,displaySignificanceFlag,useMedianFlag,smoothSigma,nonMatchedFlag)
+
+if ~exist('displaySignificanceFlag','var'); displaySignificanceFlag=0;  end
+if ~exist('useMedianFlag','var');           useMedianFlag=1;            end
+if ~exist('smoothSigma','var');             smoothSigma=[];             end
+if ~exist('nonMatchedFlag','var');          nonMatchedFlag=1;           end
+
+if useMedianFlag
+    getLoc = @(g)(squeeze(median(g,1)));
+else
+    getLoc = @(g)(squeeze(mean(g,1)));
+end
+
+numGroups = length(data);
+
+if ~isempty(smoothSigma)
+    windowLen = 5*smoothSigma;
+    window = exp(-0.5*(((1:windowLen) - (windowLen+1)/2)/smoothSigma).^2);
+    window = window/sum(window); %sqrt(sum(window.^2));
+    
+    for i=1:numGroups
+        data{i} = convn(data{i},window,'same');
+    end
+end
+
+axes(hPlot);
+for i=1:numGroups
+    clear bootStat mData sData
+    mData = getLoc(data{i}); 
+    if useMedianFlag
+        bootStat = bootstrp(1000,getLoc,data{i});
+        sData = std(bootStat);
+    else
+        sData = std(data{i},[],1)/sqrt(size(data{i},1));
+    end
+    
+    patch([xs';flipud(xs')],[mData'-sData';flipud(mData'+sData')],displaySettings.colorNames(i,:),'linestyle','none','FaceAlpha',0.4);
+    hold on;
+    plot(xs,mData,'color',displaySettings.colorNames(i,:),'linewidth',1);
+end
+
+set(gca,'fontsize',displaySettings.fontSizeLarge);
+set(gca,'TickDir','out','TickLength',displaySettings.tickLengthMedium);
+
+if exist('yLims','var') && ~isempty(yLims)
+    ylim(yLims);
+else
+    yLims = ylim;
+end
+
+if displaySignificanceFlag % Do significance Testing
+    
+    allData = [];
+    allIDs = [];
+    for j=1:numGroups
+        allData = cat(1,allData,data{j});
+        allIDs = cat(1,allIDs,j+zeros(size(data{j},1),1));
+    end
+       
+   for i=1:length(xs)
+       if useMedianFlag
+           p=kruskalwallis(allData(:,i),allIDs,'off');
+       else
+           if nonMatchedFlag
+               [~,p]=ttest2(data{1}(:,i),data{2}(:,i)); % only tests 2 groups
+           else
+               [~,p]=ttest(data{1}(:,i),data{2}(:,i)); % only tests 2 groups
+           end
+       end
+       % Get patch coordinates
+       yVals = yLims(1)+[0 0 diff(yLims)/20 diff(yLims)/20];
+       
+       clear xMidPos xBegPos xEndPos
+       xMidPos = xs(i);
+       if i==1
+           xBegPos = xMidPos;
+       else
+           xBegPos = xMidPos-(xs(i)-xs(i-1))/2; 
+       end
+       if i==length(xs)
+           xEndPos = xMidPos; 
+       else
+           xEndPos = xMidPos+(xs(i+1)-xs(i))/2; 
+       end
+       clear xVals; xVals = [xBegPos xEndPos xEndPos xBegPos]';
+       
+       if (p<0.05)
+           patch(xVals,yVals,'k','linestyle','none');
+       end
+       if (p<0.01)
+           patch(xVals,yVals,'g','linestyle','none');
+       end
+   end
+end
+end
