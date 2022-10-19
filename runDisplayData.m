@@ -1,6 +1,22 @@
+% ToDo
+% Display
+% 0. Display - show better brain maps. Currently using scatter3.
+% 1. Display - 8th column - plot errorbars properly as swarm plots.
+% 2. Display - the 9th column show show fraction as a function from the
+% voxel that has maximum activation. 
+
+% Analysis
+% 1. Subject power matching
+% 2. Find electrodes that are bad in many subjects and remove those common
+% bad electrodes. Do LORETA analysis on the subset of subjects who have remaining
+% good electrodes
+% 3. Number of trials matching - since stats may depend on the number of
+% trials, control for that by having the same number of trials for all subjects.
+% 4. If there are enough subjects for Case/Control - do that comparison.
+
 clear; clc;
 
-thres=-10; % only subjects who have delta power above this (in dB) are selected. Set to a low value such as -inf to take all subjects
+thres=0; % only subjects who have delta power above this (in dB) are selected. Set to a low value such as -inf to take all subjects
 useCommonSubjectsFlag=1; % if set to 1, only subjects for which delta power is more than threshold for all frequencies are chosen
 useMedianFlag=1;
 

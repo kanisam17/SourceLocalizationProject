@@ -63,8 +63,7 @@ end
 numAreas = length(areaList);
 pThreshold = 0.05;
 
-mFractionList = zeros(1,numAreas);
-sFractionList = zeros(1,numAreas);
+allFractionLists = cell(1,numGroups);
 for i=1:numGroups
     allpVals = sourceData(i).pVals;
     numSubjects = size(allpVals,1);
@@ -77,12 +76,36 @@ for i=1:numGroups
             fractionList(s,k) = length(find(pDataTMP<pThreshold))/length(pDataTMP);
         end
     end
-    mFractionList(i,:) = mean(fractionList);
-    sFractionList(i,:) = std(fractionList)/sqrt(numSubjects);
+    allFractionLists{i} = fractionList;
 end
 
-bar(hPlots(8),mFractionList');
+del=0.3;
+hold(hPlots(8),'on');
 
+pList = zeros(1,numAreas);
+areaStr = cell(1,numAreas);
+for i=1:numAreas
+    areaStr{i} = areaList{i}(1);
+    x1 = allFractionLists{1}(:,i);
+    x2 = allFractionLists{2}(:,i);
+    
+    if useMedianFlag
+        mX1 = median(x1); sX1 = getSEMedian(x1);
+        mX2 = median(x2); sX2 = getSEMedian(x2);
+        pList(i) = ranksum(x1,x2);
+    else
+        mX1 = mean(x1); sX1 = std(x1)/sqrt(length(x1));
+        mX2 = median(x2); sX2 = std(x2)/sqrt(length(x2));
+        [~,pList(i)] = ttest2(x1,x2);
+    end
+    
+    bar(i-del/2,mX1,'facecolor',displaySettings.colorNames(1,:),'barwidth',del,'Parent',hPlots(8));
+    bar(i+del/2,mX2,'facecolor',displaySettings.colorNames(2,:),'barwidth',del,'Parent',hPlots(8));
+    errorbar(hPlots(8),i-del/2,mX1,sX1,'color',displaySettings.colorNames(1,:));
+    errorbar(hPlots(8),i+del/2,mX2,sX2,'color',displaySettings.colorNames(2,:));
+end
+set(hPlots(8),'XTick',1:numAreas,'XTickLabel',areaStr);
+disp([rangeName ', p=' num2str(pList)]);
 end
 
 function chanlocs = getMontageDetails(refType)
