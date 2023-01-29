@@ -9,9 +9,10 @@
 clear; clc;
 
 % Mandatory fixed options
-folderSourceString = 'D:\OneDrive - Indian Institute of Science\Supratim\Projects\TLSAEEGProject'; % Indicate the parent folder of decimatedData
+folderSourceString = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\sLORETA_Thres10\interpolatedData'; % Indicate the parent folder of decimatedData
 projectName = 'ADGammaProject'; % Only this dataset, which is the main TLSA dataset, is configured as of now. Other options - 'AgeProjectRound1' and 'VisualGamma' may not work
 stRange = [0.25 0.75];
+
 
 % Choose one of these options
 refType = 'unipolar'; % 'unipolar' % Set reference type here.
@@ -22,7 +23,7 @@ removeMicroSaccadesFlag = 0; % 0 or 1.
 goodSubjects = getGoodSubjectsProjectwise(projectName,1);
 uniqueSubjectNames = getGoodFileNamesForSubjects(goodSubjects{1});
 
-for iSub = 1:length(uniqueSubjectNames)
+for iSub = 196:length(uniqueSubjectNames)
     subjectName = uniqueSubjectNames{iSub};
     disp([num2str(iSub) ': ' subjectName]);
     analyseAndSaveValuesIndividualSubject(folderSourceString,subjectName,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag); % Save data in analyzedData

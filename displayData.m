@@ -1,10 +1,10 @@
-function displayData(hPlots,subjectNameListFinal,strList,deltaPSD,freqVals,topoData,sourceData,rangeName,refType,useMedianFlag)
+function displayData(hPlots,subjectNameListFinal,strList,deltaPSD,freqVals,topoData,sourceData,rangeName,refType,useMedianFlag,folderLORETA,xyz)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% Display Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 displaySettings.fontSizeLarge = 10; displaySettings.tickLengthMedium = [0.025 0];
 % colormap magma;
 colormap jet;
-colorNames = hot(8); colorNames([1:3,end-2:end],:) = [];
+colorNames = hot(8); %colorNames([1:2,end-1:end],:) = [];
 displaySettings.colorNames = colorNames;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -54,7 +54,7 @@ for i=1:numGroups
     else
         mData = mean(statVals);
     end
-    scatter3(hPlots(5+i),xyz(:,1),xyz(:,2),xyz(:,3),1,mData);
+    scatter3(hPlots(5+i),xyz(:,1),xyz(:,2),xyz(:,3),1,mData); %%
     caxis(hPlots(5+i),cLims);
     title(hPlots(5+i),['tStats ' strList{i}]);
 end
@@ -79,7 +79,7 @@ for i=1:numGroups
     allFractionLists{i} = fractionList;
 end
 
-del=0.3;
+del=0.3; %del=0.3;
 hold(hPlots(8),'on');
 
 pList = zeros(1,numAreas);
@@ -88,6 +88,9 @@ for i=1:numAreas
     areaStr{i} = areaList{i}(1);
     x1 = allFractionLists{1}(:,i);
     x2 = allFractionLists{2}(:,i);
+    z1 = zscore(allFractionLists{1}(:,i));
+    z2 = zscore(allFractionLists{2}(:,i));
+    
     
     if useMedianFlag
         mX1 = median(x1); sX1 = getSEMedian(x1);
@@ -95,18 +98,98 @@ for i=1:numAreas
         pList(i) = ranksum(x1,x2);
     else
         mX1 = mean(x1); sX1 = std(x1)/sqrt(length(x1));
-        mX2 = median(x2); sX2 = std(x2)/sqrt(length(x2));
+        mX2 = mean(x2); sX2 = std(x2)/sqrt(length(x2));
         [~,pList(i)] = ttest2(x1,x2);
     end
+    %Log scale plotting
+    %x1 = 10.log10(x1); x2 = 10.log10(x2); mX1 = 10.log10(mX1); mX2 = 10.log10(mX2);
     
-    bar(i-del/2,mX1,'facecolor',displaySettings.colorNames(1,:),'barwidth',del,'Parent',hPlots(8));
-    bar(i+del/2,mX2,'facecolor',displaySettings.colorNames(2,:),'barwidth',del,'Parent',hPlots(8));
+    bar(i-del/2,mX1,'FaceAlpha',0.8,'facecolor',displaySettings.colorNames(2,:),'barwidth',2*del/3,'Parent',hPlots(8));
+    bar(i+del/2,mX2,'FaceAlpha',0.8,'facecolor',displaySettings.colorNames(3,:),'barwidth',2*del/3,'Parent',hPlots(8));
+    
+    
+    swarmchart(ones(1,length(x1))*i-del/2,x1,11,displaySettings.colorNames(1,:),'filled','MarkerFaceAlpha',0.3,'Parent',hPlots(8)); %Added by Kan
+    swarmchart(ones(1,length(x2))*i+del/2,x2,11,displaySettings.colorNames(4,:),'filled','MarkerFaceAlpha',0.3,'Parent',hPlots(8)); %Added by Kan
+   
     errorbar(hPlots(8),i-del/2,mX1,sX1,'color',displaySettings.colorNames(1,:));
-    errorbar(hPlots(8),i+del/2,mX2,sX2,'color',displaySettings.colorNames(2,:));
+    errorbar(hPlots(8),i+del/2,mX2,sX2,'color',displaySettings.colorNames(4,:));
+    
+    title(hPlots(8),['Activated/Total voxel in lobes']);
 end
 set(hPlots(8),'XTick',1:numAreas,'XTickLabel',areaStr);
 disp([rangeName ', p=' num2str(pList)]);
+
+
+% % plot percentSignificant vs euclidian distance from peak. #added by kan
+% 
+[euDis, tStats]= euDistanceForLORETA(folderLORETA,subjectNameListFinal,strList,xyz,1);
+% %figure for euclidian distance binned; % remove if nesting in other code #kan
+% plotBinWidth = 20; plotBinLimit = 141;
+% 
+% for freqRange = 1:3 % choose the frequency range
+%     
+%     a{1} = mean(tStats{1}(freqRange,:,:),3); a{2} = mean(tStats{2}(freqRange,:,:),3);
+%     mtStats= a; clear a;
+%     
+%     c{1} = euDis{1}(freqRange,:,1); c{2} = euDis{2}(freqRange,:,1);
+%     meuDis = c; clear c;
+%     
+%     for numGroup = 1:2
+%         colorMrkr = {[0 0 0],[0.5 0.5 0.5]};
+%         alphaErrorbar = 0.65; % transparency level for errorbars
+%         headingColor = colorMrkr;
+%         useMedianFlagData = true;
+%         
+%         [h{numGroup},binned_Y{numGroup}] = plotIndivConnData(mtStats{numGroup},meuDis{numGroup},plotBinWidth,plotBinLimit,colorMrkr{numGroup},useMedianFlagData,1);
+%         hold on
+%     end
+%     
+% end 
+%     function [h,mean_binY1] = plotIndivConnData(mtStats,meuDis,binWidth,binLimit,colorMrkr,medianFlag,plotSwitch)
+%     if ~exist('plotSwitch','var');    plotSwitch = 1;       end
+%     connectDiscrete =  '-o';
+%     DiscreteVisibility = 'on';
+%     binEdges = 0:binWidth:binLimit;
+%     nbins = length(binEdges)-1;
+%     binned_bin_meuDis = binEdges(1:end-1)+(binWidth/2);
+%     
+%     
+%     mean_binY1 = zeros(1,nbins); %%default mean_binY1 = zeros(nsubjects,nbins);
+%     
+%     binned_meuDis = discretize(meuDis,binEdges); %%binned_meuDis = discretize(meuDis(:,i),binEdges);
+%     binned_mtStats = cell(1,nbins);
+%     for b = 1:nbins % number of bins
+%         binned_mtStats{b} = mtStats(binned_meuDis == b);
+%     end
+%     if(medianFlag)
+%         %     median_binned_binY = nanmedian(mean_binY1,1);
+%         mSEM = @(data)std(bootstrp(1000,@nanmedian,data));
+%     else
+%         %     median_binned_binY = nanmean(mean_binY1,1);
+%         mSEM = @(data)std(bootstrp(1000,@nanmean,data));
+%     end
+%     if(medianFlag)
+%         mean_binY1 = cellfun(@nanmedian,binned_mtStats); % Note:add if bin value is empty,dont assign SEM.
+%         std_binned_binY= cellfun(mSEM,binned_mtStats);
+%     else
+%         mean_binY1 = cellfun(@nanmean,binned_mtStats);
+%         std_binned_binY= cellfun(mSEM,binned_mtStats);
+%     end
+%     
+%     median_binned_binY = mean_binY1;
+%     
+%     if(plotSwitch)
+%         if(length(std_binned_binY)==1)
+%             h = errorbar(binned_bin_meuDis,median_binned_binY,nan(1,8),connectDiscrete,'Color',colorMrkr,'MarkerFaceColor','w','LineWidth',1.5,'HandleVisibility',DiscreteVisibility);
+%         else
+%             h = errorbar(binned_bin_meuDis,median_binned_binY,std_binned_binY,connectDiscrete,'Color',colorMrkr,'MarkerFaceColor','w','LineWidth',1.5,'HandleVisibility',DiscreteVisibility);
+%         end
+%     else
+%         h = [];
+%     end
+%     end
 end
+
 
 function chanlocs = getMontageDetails(refType)
 
@@ -141,7 +224,7 @@ if ~isempty(smoothSigma)
     window = exp(-0.5*(((1:windowLen) - (windowLen+1)/2)/smoothSigma).^2);
     window = window/sum(window); %sqrt(sum(window.^2));
     
-    for i=1:numGroups
+    for i=1:Groups
         data{i} = convn(data{i},window,'same');
     end
 end
