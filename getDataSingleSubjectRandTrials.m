@@ -1,6 +1,6 @@
 %%Modified from original to get random trials, modified at line 109-111 and
 %%...allbadElecs
-function [allProtocolsBLData,stPowerVsFreq,blPowerVsFreq,freqVals,tfPower,timeValsTF,freqValsTF,erp,timeVals,numGoodTrials,numAnalysedElecs,allBadElecs]=getDataSingleSubjectRandTrials(cleanDataFolder,fileLists,capType,electrodeList,stRange,TFFlag,numMSInRangePerProtocol,condVals,params,discardBadElecFlag,spatialFrequenciesToRemove)
+function [allProtocolsBLData,stPowerVsFreq,blPowerVsFreq,freqVals,tfPower,timeValsTF,freqValsTF,erp,timeVals,numGoodTrials,numAnalysedElecs,allBadElecs,trialIdx]=getDataSingleSubjectRandTrials(cleanDataFolder,fileLists,capType,electrodeList,stRange,TFFlag,numMSInRangePerProtocol,condVals,params,discardBadElecFlag,spatialFrequenciesToRemove)
 
 if ~exist('TFFlag','var') || isempty(TFFlag); TFFlag= 1; end
 if ~exist('stRange','var') || isempty(stRange); stRange = [0.25 0.75]; end
@@ -78,7 +78,7 @@ for iProt = 1:length(fileLists)
         goodProtFlag(iLoop)=false;
     end
     
-    [stPowerVsFreq(iLoop,:,:),blPowerVsFreq(iLoop,:,:),freqVals,tfPower(iLoop,:,:,:),timeValsTF,freqValsTF,erp(iLoop,:,:,:),numAnalysedElecs(iLoop,:)]=...
+    [stPowerVsFreq(iLoop,:,:),blPowerVsFreq(iLoop,:,:),freqVals,tfPower(iLoop,:,:,:),timeValsTF,freqValsTF,erp(iLoop,:,:,:),numAnalysedElecs(iLoop,:),trialIdx{iLoop}]=...
         getDataSingleSession(eegData,timeVals,electrodeList,stRange,TFFlag,params);
     numGoodTrials(iLoop) = size(eegData,2);
     iLoop = iLoop+1;
@@ -98,23 +98,29 @@ if any(goodProtFlag)
     tfPower = removeDimIfSingleton(mean(tfPower(goodProtFlag,:,:,:),1),1);
     erp = removeDimIfSingleton(mean(erp(goodProtFlag,:,:),1),1);
     numGoodTrials = sum(numGoodTrials(goodProtFlag));
+    trialIdx = trialIdx(goodProtFlag);
 else
     stPowerVsFreq = [];
     blPowerVsFreq = [];
     tfPower = [];
     erp = [];
     numGoodTrials = [];
+    trialIdx = [];
 end
 end
 
-function [stPowerVsFreq,blPowerVsFreq,freqVals,tfPower,timeValsTF,freqValsTF,erp,numAnalysedElecs]=getDataSingleSession(eegData,timeVals,electrodeList,stRange,TFFlag,params)
-numX= size(eegData,2);%% Added by kan
-if numX < 70%% Added by kan
-    numNew = 1:numX; %% Added by kan
+function [stPowerVsFreq,blPowerVsFreq,freqVals,tfPower,timeValsTF,freqValsTF,erp,numAnalysedElecs,trialIdx]=getDataSingleSession(eegData,timeVals,electrodeList,stRange,TFFlag,params)
+numX= size(eegData,2);% number of total trials
+trialLength = 70;     % define limit to select trials for further analysis
+if numX < trialLength
+    numNew = 1:numX;  % if less than the given number, select all trials
+    trialIdx = numNew;   % index of all randomly selected trials
 else
-    numNew = randperm(numX,70);        %% Added by kan
-    eegData = eegData(:,numNew,:);   %% Added by kan
+    numNew = randperm(numX,trialLength);        %
+    eegData = eegData(:,numNew,:);   %
+    trialIdx = {numNew};   % index of all randomly selected trials
 end
+
 blRange = [-diff(stRange) 0];
 
 % Get good positions
