@@ -8,9 +8,9 @@ function saveRawLORETAData(subjectNameListFinal,dataStr,folderLORETA,folderOutpu
 
 x = load('goodProtFlag');
 
-for i=1%:2  
-    %subjectNames = subjectNameListFinal{i}; % for case & controls Averaged
-    subjectNames = subjectNameListFinal.subjectNameListMatched {i}; 
+for i=1:length(dataStr)  
+  
+    subjectNames = subjectNameListFinal{i}; 
 
     for j=1:length(subjectNames)
         for iSub = 1:length(subjectNames{1,j})%added by kan

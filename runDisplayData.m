@@ -57,6 +57,7 @@ uniqueSubjectNames = uniqueSubjectNames0(goodIndices);
 %%%%%%%%%%%%%%%%%%%%%%%%%% Load Power Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 gamma1Range = [20 34]; gamma2Range = [36 66]; alphaRange = [8 12];
 spatialFrequenciesToRemove=[];
+%dataForDisplay = combineAnalyzedData(pwd,uniqueSubjectNames,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange,spatialFrequenciesToRemove,0);
 dataForDisplay = combineAnalyzedData(interpolatedData,uniqueSubjectNames,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange,spatialFrequenciesToRemove,0);
 
 % Here data is saved in the order [SG, FG, alpha]. Change to [alpha SG FG];
@@ -70,7 +71,7 @@ dataForDisplay.powerDBTopoAllSubjects = dataForDisplay.powerDBTopoAllSubjects(:,
 healthyPos = strcmp(cdrList,'HV');
 malePos = strcmp(genderList, 'M'); femalePos = strcmp(genderList, 'F');
 %%
-conditions = {'PowdB_10','Trials_180','PowMatch'};
+conditions = {'PowdB_10','trialsControl','powerMatch'};
 %% mid or old
 % ageGroup1Pos = (ageList<65) & healthyPos;
 % ageGroup2Pos = (ageList>=65) & healthyPos;

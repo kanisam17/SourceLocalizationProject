@@ -23,7 +23,7 @@ removeMicroSaccadesFlag = 0; % 0 or 1.
 goodSubjects = getGoodSubjectsProjectwise(projectName,1);
 uniqueSubjectNames = getGoodFileNamesForSubjects(goodSubjects{1});
 
-for iSub = 1:length(uniqueSubjectNames)
+for iSub = 1:length(uniqueSubjectNames) %
     subjectName = uniqueSubjectNames{iSub};
     disp([num2str(iSub) ': ' subjectName]);
     analyseAndSaveValuesIndividualSubject(folderSourceString,subjectName,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag); % Save data in analyzedData
