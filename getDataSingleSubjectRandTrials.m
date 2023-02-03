@@ -1,5 +1,5 @@
 %%Modified from original to get random trials, modified at line 109-111 and
-%%...allbadElecs
+%%...allbadElecs and index of randomly selected trials 'trialIdx'
 function [allProtocolsBLData,stPowerVsFreq,blPowerVsFreq,freqVals,tfPower,timeValsTF,freqValsTF,erp,timeVals,numGoodTrials,numAnalysedElecs,allBadElecs,trialIdx]=getDataSingleSubjectRandTrials(cleanDataFolder,fileLists,capType,electrodeList,stRange,TFFlag,numMSInRangePerProtocol,condVals,params,discardBadElecFlag,spatialFrequenciesToRemove)
 
 if ~exist('TFFlag','var') || isempty(TFFlag); TFFlag= 1; end
@@ -118,7 +118,8 @@ if numX < trialLength
 else
     numNew = randperm(numX,trialLength);        %
     eegData = eegData(:,numNew,:);   %
-    trialIdx = {numNew};   % index of all randomly selected trials
+    %trialIdx = {numNew};   % index of all randomly selected trials
+    trialIdx = numNew; % change done on 030223- evening
 end
 
 blRange = [-diff(stRange) 0];
