@@ -2,7 +2,7 @@
 % run this code only after running the runAnalyseAndSaveValuesIndividualSubject.m
 
 
-function [trialIdxAllSub,subjectNamesOnly] = getTrialIdxAndGoodSubject64Elecs(folderSourceString,projectName,protocolType,uniqueSubjectNames)
+function [trialIdxAllSub,goodSubjects64Elecs] = getTrialIdxAndGoodSubject64Elecs(folderSourceString,projectName,protocolType,uniqueSubjectNames)
 
 files = dir(fullfile(folderSourceString, projectName, protocolType, '*.mat')); 
 % files= files(3:end);% to select only subject mat files
@@ -28,8 +28,20 @@ for i = 1:length(files)
     catch
     end
     subjectNamesOnly{i} = filenames{i}(1:(index{i}-2));
+    
 end
-subjectNamesOnly = 
+
+[a,~] = strcmp(subjectNamesOnly,uniqueSubjectNames);
+% 
+
+%%generate subject names 
+
+
+% 
+% save('trialIdxAllSub.mat', 'trialIdxAllSub');
+% save('goodSubjects64Elecs.mat', 'goodSubjects64Elecs')
+% %save goodSubjects64Elecs; save trialIdxAllSub;
+
 
 
 

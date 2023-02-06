@@ -42,6 +42,7 @@ removeMicroSaccadesFlag = 0; % 0 or 1.
 goodSubjects = getGoodSubjectsProjectwise(projectName,1);
 uniqueSubjectNames0 = getGoodFileNamesForSubjects(goodSubjects{1});
 
+
 %%%%%%%%%%%%%% Find indices for which the correct capType was used %%%%%%%%
 capTypeToUse = 'actiCap64';
 goodIndices = []; 
@@ -51,13 +52,29 @@ for i=1:length(uniqueSubjectNames0)
         goodIndices = cat(2,goodIndices,i);
     end
 end
-disp([num2str(length(goodIndices)) ' subjects with correct capType chosen for further analysis']);
+disp([num2str(length(goodIndices)) 'subjects with correct capType chosen for further analysis']);
 uniqueSubjectNames = uniqueSubjectNames0(goodIndices);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% Creating random trials index %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 analyzedDataLocation = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\analyzedDataRandTrials';
 analyzedDataFolder = fullfile(analyzedDataLocation, projectName, protocolType);
-[trialIdxAllSub,goodSubjects64Elecs] = getTrialIdxAndGoodSubject64Elecs(analyzedDataLocation,projectName,protocolType);
+[trialIdxAllSub0,goodSubject64Elecs] = getTrialIdxAndGoodSubject64Elecs(analyzedDataLocation,projectName,protocolType,uniqueSubjectNames);
+% index = 1:length(uniqueSubjectNames0);
+% [~,gIndex] = setdiff(index, goodIndices); gIndex = gIndex'; 
+
+% newIndex = setdiff(goodIndices, gIndex);% newIndex == goodIndices
+
+% trialIdxAllSub = trialIdxAllSub0(newIndex);
+
+% tempMatrix = cell(1, length(newIndex)); % initialize newMatrix as a cell array
+% for i = 1:length(newIndex)
+%     if ~isempty(trialIdxAllSub0{1, newIndex(i)}) % check if cell is not empty
+%         tempMatrix{i} = trialIdxAllSub0{1, newIndex(i)}; % add non-empty cell to newMatrix
+%     end
+% end
+% trialIdxAllSub = cell2mat(tempMatrix); % convert cell array to matrix
+
 
 
 
