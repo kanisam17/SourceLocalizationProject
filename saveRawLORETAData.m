@@ -4,29 +4,29 @@
 % 1. mean (across trials) power for BL and ST
 % t-stats and p-vals after performing t-test.
 
-function saveRawLORETAData(subjectNameListFinal,dataStr,folderLORETA,folderOutput)
+function saveRawLORETAData(subjectNameListFinal,dataStr,folderLORETA,folderOutput,trialIdxListFinal)
 
 x = load('goodProtFlag');
 
-for i=1:length(dataStr)  
-  
-    subjectNames = subjectNameListFinal{i}; 
-
+for i=2%1:length(dataStr)
+    
+    subjectNames = subjectNameListFinal{i};
+    
     for j=1:length(subjectNames)
-        for iSub = 1:length(subjectNames{1,j})%added by kan
-            subjectNametemp = subjectNames{j};
-            subjectName = subjectNametemp{iSub};%added by kan
-    
-    folderToSave = fullfile(folderOutput,dataStr{i});
-    makeDirectory(folderToSave);
-    
-    folderLORETABL = fullfile(folderLORETA,dataStr{i},'BL');
-    folderLORETAST = fullfile(folderLORETA,dataStr{i},'ST');
-    
-%     for j=1:length(subjectNames) % for case and control averaged
-%         subjectName = subjectNames{j};
+        %         for iSub = 1:length(subjectNames{1,j})%added by kan
+        subjectName = subjectNames{j};
+        %             subjectName = subjectNametemp{iSub};%added by kan
         
-    
+        folderToSave = fullfile(folderOutput,dataStr{i});
+        
+        
+        folderLORETABL = fullfile(folderLORETA,dataStr{i},'BL');
+        folderLORETAST = fullfile(folderLORETA,dataStr{i},'ST');
+        
+        %     for j=1:length(subjectNames) % for case and control averaged
+        %         subjectName = subjectNames{j};
+        
+        
         
         disp([ dataStr{i} ', ' subjectName]);
         
@@ -38,30 +38,45 @@ for i=1:length(dataStr)
         dataBLtmp = [];
         dataSTtmp = [];
         
-        for k=1:length(protocolNames)   
+        for k=1:length(protocolNames)
             if goodProts(k) % If this is a good protocol
-                % Read all files in these folders
-                filesBL = dir(fullfile(folderLORETABL,[subjectName '-' expDates{k} '-' protocolNames{k}],'sLORtoText\*.txt'));
-                clear tmpBL
-                for f=1:size(filesBL,1)  
-                    tmpBL(f,:,:) = textread(fullfile(filesBL(f).folder,filesBL(f).name)); %#ok<*DTXTRD,*AGROW>
+                %                 filesBL = dir(fullfile(folderLORETABL,[subjectName '-' expDates{k} '-' protocolNames{k}],'sLORtoText\*.txt'));
+                folder2ReadBL = fullfile(folderLORETABL,[subjectName '-' expDates{k} '-' protocolNames{k}],'sLORtoText');
+                for l = 1:size(trialIdxListFinal{i}{j}{k}{1},2)
+                    epochNum = trialIdxListFinal{i}{j}{k}{1}(l);
+                    file2ReadBL = [subjectName '-' expDates{k} '-' protocolNames{k} '-epoch' num2str(epochNum,'%04d') '-slor.txt'];
+                    tmpBL(l,:,:) = textread(fullfile(folder2ReadBL,file2ReadBL));
                 end
+            
+                % clear tmpBL
+                %                 for f=1:size(filesBL,1)
+                %                     tmpBL(f,:,:) = textread(fullfile(filesBL(f).folder,filesBL(f).name)); %#ok<*DTXTRD,*AGROW>
+                %                 end
                 dataBLtmp = cat(1,dataBLtmp,tmpBL);
                 
-                filesST = dir(fullfile(folderLORETAST,[subjectName '-' expDates{k} '-' protocolNames{k}],'sLORtoText\*.txt'));
-                clear tmpST
-                for f=1:size(filesST,1)  
-                    tmpST(f,:,:) = textread(fullfile(filesST(f).folder,filesST(f).name));
+                
+                folder2ReadST = fullfile(folderLORETAST,[subjectName '-' expDates{k} '-' protocolNames{k}],'sLORtoText');
+                for l = 1:size(trialIdxListFinal{i}{j}{k}{1},2)
+                    epochNum = trialIdxListFinal{i}{j}{k}{1}(l);
+                    file2ReadST = [subjectName '-' expDates{k} '-' protocolNames{k} '-epoch' num2str(epochNum,'%04d') '-slor.txt'];
+                    tmpST(l,:,:) = textread(fullfile(folder2ReadST,file2ReadST));
                 end
+                
+%                 filesST = dir(fullfile(folderLORETAST,[subjectName '-' expDates{k} '-' protocolNames{k}],'sLORtoText\*.txt'));
+%                 
+%                 clear tmpST
+%                 for f=1:size(filesST,1)
+%                     tmpST(f,:,:) = textread(fullfile(filesST(f).folder,filesST(f).name));
+%                 end
                 dataSTtmp = cat(1,dataSTtmp,tmpST);
             end
         end
-
+        
         clear mDataBL mDataST tStats pVals numStimuli
         numStimuli = size(dataBLtmp,1);
         mDataBL = squeeze(mean(dataBLtmp,1));
         mDataST = squeeze(mean(dataSTtmp,1));
-       
+        
         
         % do statistical testing
         numFreqRanges = size(dataBLtmp,2);
@@ -76,19 +91,20 @@ for i=1:length(dataStr)
         end
         
         % Save data
-        fileToSave = fullfile(folderToSave,subjectName);
+        mkdir (folderToSave); 
+        fileToSave = fullfile(folderToSave,subjectName); 
         save(fileToSave,'mDataBL','mDataST','tStats','pVals','numStimuli');
-        end
     end
+end
 end
 
 %% Average of matched subject w.r.t. case subjects %added by kan
 % folderSource = fullfile('N:\Projects\Kanishka_SourceLocalizationProject\data\sLORETA_Thres10\caseControl\control');
-% 
+%
 % load('caseListAgeMatched.mat')
-% 
-% 
-% 
+%
+%
+%
 % for i = 1:size(caseList.subjectNameListMatched{1},2)
 %     for j = 1:size(caseList.subjectNameListMatched{1, 1}{1,i},2)
 %         for k = 1:size(caseList.subjectNameListMatched{1, 1}{1,i}{1,j})
@@ -97,13 +113,12 @@ end
 %         mDataST_mean = zeros(3,6239,size(caseList.subjectNameListMatched{1, 1}{1,i},2));
 %         pVals_mean = zeros(3,6239,size(caseList.subjectNameListMatched{1, 1}{1,i},2));
 %         tStats_mean = zeros(3,6239,size(caseList.subjectNameListMatched{1, 1}{1,i},2));
-%         
-%        
+%
+%
 %         end
 %     end
 % end
-        
-        
-        
-        
-        
+
+
+
+
