@@ -1,6 +1,6 @@
 %%Modified from original to get random trials, modified at line 109-111 and
 %%...allbadElecs and index of randomly selected trials 'trialIdx'
-function [allProtocolsBLData,stPowerVsFreq,blPowerVsFreq,freqVals,tfPower,timeValsTF,freqValsTF,erp,timeVals,numGoodTrials,numAnalysedElecs,allBadElecs,trialIdx]=getDataSingleSubjectRandTrials(cleanDataFolder,fileLists,capType,electrodeList,stRange,TFFlag,numMSInRangePerProtocol,condVals,params,discardBadElecFlag,spatialFrequenciesToRemove)
+function [allProtocolsBLData,stPowerVsFreq,blPowerVsFreq,freqVals,tfPower,timeValsTF,freqValsTF,erp,timeVals,numGoodTrials,numAnalysedElecs,allBadElecs,trialIdx,goodProtFlag]=getDataSingleSubjectRandTrials(cleanDataFolder,fileLists,capType,electrodeList,stRange,TFFlag,numMSInRangePerProtocol,condVals,params,discardBadElecFlag,spatialFrequenciesToRemove)
 
 if ~exist('TFFlag','var') || isempty(TFFlag); TFFlag= 1; end
 if ~exist('stRange','var') || isempty(stRange); stRange = [0.25 0.75]; end
@@ -29,7 +29,7 @@ for iProt = 1:length(fileLists)
     allBadElecs = unique([badImpedanceElecs;noisyElecs;flatPSDElecs])';
     
     
-    electrodeListVis = getElectrodeList(capType,'bipolar');
+    electrodeListVis = getElectrodeList(capType,'unipolar'); % Original was bipolar
     clear goodSideFlag
     for iSide = 1:length(electrodeListVis)
         clear goodElecFlag
@@ -106,6 +106,7 @@ else
     erp = [];
     numGoodTrials = [];
     trialIdx = [];
+    goodProtFlag = [];
 end
 end
 
