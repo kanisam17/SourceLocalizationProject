@@ -9,7 +9,7 @@
 clear; clc;
 
 % Mandatory fixed options
-folderSourceString = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\sLORETA_Thres10\interpolatedData'; % Indicate the parent folder of decimatedData
+folderSourceString = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\sLORETA_Thres10\interpolatedData'; % Indicate the parent folder of decimatedData/interpolatedData
 projectName = 'ADGammaProject'; % Only this dataset, which is the main TLSA dataset, is configured as of now. Other options - 'AgeProjectRound1' and 'VisualGamma' may not work
 stRange = [0.25 0.75];
 
