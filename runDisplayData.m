@@ -20,7 +20,7 @@ thres=-10; % only subjects who have delta power above this (in dB) are selected.
 useCommonSubjectsFlag=1; % if set to 1, only subjects for which delta power is more than threshold for all frequencies are chosen
 useMedianFlag=1;
 % folderSourceString = pwd; % input for powermatching
-folderLORETA = 'N:\Projects\Kanishka_SourceLocalizationProject\data\sLORETA_Thres10';%'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\sourceData\LORETA\data\Age'; % Folder where the output of LORETA is saved;
+folderLORETA = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\randomTrails\sLORETA_Thres10';%'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\sourceData\LORETA\data\Age'; % Folder where the output of LORETA is saved;
 %powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\powerMatchedSubjectList.mat');
 powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\matchedSubjectNameList_FG.mat');
 caseList = load('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\ADGammaProjectCodes\caseAgeMatchedSubjectList.mat');
@@ -45,13 +45,29 @@ uniqueSubjectNames0 = getGoodFileNamesForSubjects(goodSubjects{1});
 
 %%%%%%%%%%%%%% Find indices for which the correct capType was used %%%%%%%%
 capTypeToUse = 'actiCap64';
-goodIndices = []; 
+goodIndices = []; protocolNamesUnique = {};expDatesUnique = {};
 for i=1:length(uniqueSubjectNames0)
-    [expDates,~,capType,usableDataFlag] = getProtocolDetailsForAnalysis(projectName,uniqueSubjectNames0{i},protocolType);
+    [expDates,protocolNames,capType,usableDataFlag] = getProtocolDetailsForAnalysis(projectName,uniqueSubjectNames0{i},protocolType);
     if usableDataFlag && ~isempty(expDates) && strcmp(capType{1},capTypeToUse)
-        goodIndices = cat(2,goodIndices,i);
+        goodIndices = cat(2,goodIndices,i); 
+    end
+    protocolNames0 = {protocolNames};
+    try
+    protocolNamesUnique = cat(2,protocolNamesUnique,protocolNames0);
+    catch
+    end
+    expDate0 = {expDates};
+    try
+    expDatesUnique = cat(2,expDatesUnique,expDate0);
+    catch
     end
 end
+
+for i = 1:size(protocolNamesUnique,2)
+    protocolNamesUnique{i} = protocolNamesUnique{i}';
+end
+
+
 disp([num2str(length(goodIndices)) 'subjects with correct capType chosen for further analysis']);
 uniqueSubjectNames = uniqueSubjectNames0(goodIndices);
 
@@ -59,24 +75,8 @@ uniqueSubjectNames = uniqueSubjectNames0(goodIndices);
 %%%%%%%%%%%%%%%%%%%%%%%%%% Creating random trials index %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 analyzedDataLocation = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\analyzedDataRandTrials';
 analyzedDataFolder = fullfile(analyzedDataLocation, projectName, protocolType);
-[trialIdxAllSub0,goodSubject64Elecs] = getTrialIdxAndGoodSubject64Elecs(analyzedDataLocation,projectName,protocolType,uniqueSubjectNames);
-% index = 1:length(uniqueSubjectNames0);
-% [~,gIndex] = setdiff(index, goodIndices); gIndex = gIndex'; 
-
-% newIndex = setdiff(goodIndices, gIndex);% newIndex == goodIndices
-
-% trialIdxAllSub = trialIdxAllSub0(newIndex);
-
-% tempMatrix = cell(1, length(newIndex)); % initialize newMatrix as a cell array
-% for i = 1:length(newIndex)
-%     if ~isempty(trialIdxAllSub0{1, newIndex(i)}) % check if cell is not empty
-%         tempMatrix{i} = trialIdxAllSub0{1, newIndex(i)}; % add non-empty cell to newMatrix
-%     end
-% end
-% trialIdxAllSub = cell2mat(tempMatrix); % convert cell array to matrix
-
-
-
+[trialIdxAllSub0,~,subNameIdx,goodProtFlag] = getTrialIdxAndGoodSubject64Elecs(analyzedDataLocation,projectName,protocolType,uniqueSubjectNames);
+trialIdxAllSub = trialIdxAllSub0(subNameIdx); %trialIdxAllSub is index of random trials selected for uniqueSubjectNames.
 
 
 
@@ -131,9 +131,6 @@ trialMatchPos(ageGroup2idx) = 1;
 % % % [powerMatch1Pos,~] =ismember(uniqueSubjectNames, powerMatchedSubjectList.matchedSubjectNameLists{1});strList{1} = 'mid';
 % % % [powerMatch2Pos,~] =ismember(uniqueSubjectNames, powerMatchedSubjectList.matchedSubjectNameLists{2});strList{2} = 'old';
 % % % powerMatch = powerMatch1Pos | powerMatch2Pos;
-%% Subject selection based on good elecs
-
-
 
 %% 
 numFreqRanges = length(dataForDisplay.rangeNames);
@@ -179,9 +176,17 @@ for i=1:numFreqRanges
     
     subjectNameListFinal{1} = uniqueSubjectNames(gp1);
     subjectNameListFinal{2} = uniqueSubjectNames(gp2);
+    trialIdxListFinal{1} = trialIdxAllSub(gp1);% Added by Kan
+    trialIdxListFinal{2} = trialIdxAllSub(gp2);% Added by Kan
+    protocolNamesFinal{1} = protocolNamesUnique(gp1);% Added by Kan
+    protocolNamesFinal{2} = protocolNamesUnique(gp2);% Added by Kan
+    expDatesFinal{1} = expDatesUnique(gp1);% Added by Kan
+    expDatesFinal{2} = expDatesUnique(gp2);% Added by Kan
+    goodProtFlagFinal{1} = goodProtFlag(gp1);% Added by Kan
+    goodProtFlagFinal{2} = goodProtFlag(gp2);% Added by Kan
+    
     deltaPSD{1} = dataDeltaPSD(gp1,:);
     deltaPSD{2} = dataDeltaPSD(gp2,:);
-    
     
     
     if useMedianFlag
