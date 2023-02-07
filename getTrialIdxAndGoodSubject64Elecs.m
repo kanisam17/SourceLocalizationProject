@@ -2,7 +2,7 @@
 % run this code only after running the runAnalyseAndSaveValuesIndividualSubject.m
 
 
-function [trialIdxAllSub,subjectNamesOnly] = getTrialIdxAndGoodSubject64Elecs(folderSourceString,projectName,protocolType,uniqueSubjectNames)
+function [trialIdxAllSub,subjectNamesOnly,subNameIdx,goodProtFlag] = getTrialIdxAndGoodSubject64Elecs(folderSourceString,projectName,protocolType,uniqueSubjectNames)
 
 files = dir(fullfile(folderSourceString, projectName, protocolType, '*.mat')); 
 % files= files(3:end);% to select only subject mat files
@@ -28,8 +28,10 @@ for i = 1:length(files)
     catch
     end
     subjectNamesOnly{i} = filenames{i}(1:(index{i}-2));
+    goodProtFlag{i} = data.allProtocolsBLData.goodProtFlag;  
 end
-subjectNamesOnly = 
+subNameIdx = ismember(subjectNamesOnly,uniqueSubjectNames);
+
 
 
 
