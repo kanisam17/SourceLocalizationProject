@@ -20,14 +20,19 @@ thres=-10; % only subjects who have delta power above this (in dB) are selected.
 useCommonSubjectsFlag=1; % if set to 1, only subjects for which delta power is more than threshold for all frequencies are chosen
 useMedianFlag=1;
 % folderSourceString = pwd; % input for powermatching
-folderLORETA = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\randomTrails\sLORETA_Thres10';%'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\sourceData\LORETA\data\Age'; % Folder where the output of LORETA is saved;
-%powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\powerMatchedSubjectList.mat');
-powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\matchedSubjectNameList_FG.mat');
+% folderLORETA = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\randomTrails\sLORETA_Thres10';
+folderLORETA = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\sourceData\LORETA\data\Age'; % Folder where the output of LORETA is saved;
+
+% powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\matchedSubjectNameList_FG_new.mat');
+powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\matchedSubjectNameList_A.mat');
+
 caseList = load('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\ADGammaProjectCodes\caseAgeMatchedSubjectList.mat');
 % folderSourceString = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\sLORETA_Thres10';
 xyz = xlsread ('voxelInfo.xlsx');
 
-powerMatchedSubjectList.matchedSubjectNameLists = powerMatchedSubjectList.matchedSubjectNameList_FG;
+% powerMatchedSubjectList.matchedSubjectNameLists = powerMatchedSubjectList.powerMatchedSubjectNameLists;
+powerMatchedSubjectList.matchedSubjectNameLists = powerMatchedSubjectList.matchedSubjectNameList_A; 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mandatory fixed options
 projectName = 'ADGammaProject'; % Only this dataset, which is the main TLSA dataset, is configured as of now. Other options - 'AgeProjectRound1' and 'VisualGamma' may not work
@@ -73,9 +78,9 @@ uniqueSubjectNames = uniqueSubjectNames0(goodIndices);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% Creating random trials index %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-analyzedDataLocation = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\analyzedDataRandTrials';
+analyzedDataLocation = 'C:\Users\Liza\Documents\TLSAEEGProject\SourceLocalizationProject\23Nov2022\SourceLocalizationProject\analyzedDataRandTrials';
 analyzedDataFolder = fullfile(analyzedDataLocation, projectName, protocolType);
-[trialIdxAllSub0,~,subNameIdx,goodProtFlag] = getTrialIdxAndGoodSubject64Elecs(analyzedDataLocation,projectName,protocolType,uniqueSubjectNames);
+[trialIdxAllSub0,~,subNameIdx,~] = getTrialIdxAndGoodSubject64Elecs(analyzedDataLocation,projectName,protocolType,uniqueSubjectNames);
 trialIdxAllSub = trialIdxAllSub0(subNameIdx); %trialIdxAllSub is index of random trials selected for uniqueSubjectNames.
 
 
@@ -126,11 +131,11 @@ ageGroup2idx = ageGroup2idx(listNumStimuli{2}>180);
 trialMatchPos = false(1,237);
 trialMatchPos(ageGroup1idx) = 1;
 trialMatchPos(ageGroup2idx) = 1;
-% % % %%
-% % % % To find powermatched mid and old list
-% % % [powerMatch1Pos,~] =ismember(uniqueSubjectNames, powerMatchedSubjectList.matchedSubjectNameLists{1});strList{1} = 'mid';
-% % % [powerMatch2Pos,~] =ismember(uniqueSubjectNames, powerMatchedSubjectList.matchedSubjectNameLists{2});strList{2} = 'old';
-% % % powerMatch = powerMatch1Pos | powerMatch2Pos;
+%
+% To find powermatched mid and old list
+[powerMatch1Pos,~] =ismember(uniqueSubjectNames, powerMatchedSubjectList.matchedSubjectNameLists{1});strList{1} = 'mid';
+[powerMatch2Pos,~] =ismember(uniqueSubjectNames, powerMatchedSubjectList.matchedSubjectNameLists{2});strList{2} = 'old';
+powerMatch = powerMatch1Pos | powerMatch2Pos;
 
 %% 
 numFreqRanges = length(dataForDisplay.rangeNames);
@@ -171,8 +176,8 @@ for i=1:numFreqRanges
     %     gp2 = ageGroup2Pos & goodSubjectPos';
     %     gp1 = ageGroup1Pos & goodSubjectPos'& healthyPos & malePos;% & powerMatch;% & trialMatchPos;
     %     gp2 = ageGroup2Pos & goodSubjectPos'& healthyPos & malePos;% powerMatch;% & trialMatchPos;
-    gp1 = ageGroup1Pos & goodSubjectPos' & healthyPos; %& powerMatch;% & trialMatchPos;
-    gp2 = ageGroup2Pos & goodSubjectPos' & healthyPos; %& powerMatch;% & trialMatchPos;
+    gp1 = ageGroup1Pos & goodSubjectPos' & healthyPos;% & powerMatch;% & trialMatchPos;
+    gp2 = ageGroup2Pos & goodSubjectPos' & healthyPos;% & powerMatch;% & trialMatchPos;
     
     subjectNameListFinal{1} = uniqueSubjectNames(gp1);
     subjectNameListFinal{2} = uniqueSubjectNames(gp2);
@@ -182,8 +187,8 @@ for i=1:numFreqRanges
     protocolNamesFinal{2} = protocolNamesUnique(gp2);% Added by Kan
     expDatesFinal{1} = expDatesUnique(gp1);% Added by Kan
     expDatesFinal{2} = expDatesUnique(gp2);% Added by Kan
-    goodProtFlagFinal{1} = goodProtFlag(gp1);% Added by Kan
-    goodProtFlagFinal{2} = goodProtFlag(gp2);% Added by Kan
+%     goodProtFlagFinal{1} = goodProtFlag(gp1);% Added by Kan
+%     goodProtFlagFinal{2} = goodProtFlag(gp2);% Added by Kan
     
     deltaPSD{1} = dataDeltaPSD(gp1,:);
     deltaPSD{2} = dataDeltaPSD(gp2,:);
@@ -201,12 +206,13 @@ for i=1:numFreqRanges
     for j=1:2
         sourceData(j).BL = squeeze(allDataBL{j}(:,i,:)); %#ok<*SAGROW>
         sourceData(j).ST = squeeze(allDataST{j}(:,i,:));
+%         sourceData(j).DeltaP = squeeze(allDataDeltaP{j}(:,i,:));
         sourceData(j).tStats = squeeze(alltStats{j}(:,i,:));
         sourceData(j).pVals = squeeze(allpVals{j}(:,i,:));
     end
-    displayData(hPlots(i,:),subjectNameListFinal,strList,deltaPSD,dataForDisplay.freqVals,topoData,sourceData,dataForDisplay.rangeNames{i},refType,useMedianFlag,folderLORETA,xyz);
+    [euDis, tStats, dataDeltaP] = displayData(hPlots(i,:),subjectNameListFinal,strList,deltaPSD,dataForDisplay.freqVals,topoData,sourceData,dataForDisplay.rangeNames{i},refType,useMedianFlag,folderLORETA,xyz);
 end
 
 
-% To find powermatched mid and old list
-%powerMatchedSubjectNameLists = getPowerMatchedSubjectList(folderSourceString,subjectNameListFinal,projectName,refType,protocolType,freqBand);
+%%  To find powermatched mid and old list
+% powerMatchedSubjectNameLists = getPowerMatchedSubjectList(folderSourceString,subjectNameListFinal,projectName,refType,protocolType);
