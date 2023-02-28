@@ -210,7 +210,7 @@ for i=1:numFreqRanges
         sourceData(j).tStats = squeeze(alltStats{j}(:,i,:));
         sourceData(j).pVals = squeeze(allpVals{j}(:,i,:));
     end
-    [euDis, tStats, dataDeltaP] = displayData(hPlots(i,:),subjectNameListFinal,strList,deltaPSD,dataForDisplay.freqVals,topoData,sourceData,dataForDisplay.rangeNames{i},refType,useMedianFlag,folderLORETA,xyz);
+    [euDis,tStats,dataDeltaP] = displayData(hPlots(i,:),subjectNameListFinal,strList,deltaPSD,dataForDisplay.freqVals,topoData,sourceData,dataForDisplay.rangeNames{i},refType,useMedianFlag,folderLORETA,xyz);
 end
 
 
