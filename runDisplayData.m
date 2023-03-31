@@ -21,17 +21,26 @@ useCommonSubjectsFlag=1; % if set to 1, only subjects for which delta power is m
 useMedianFlag=1;
 % folderSourceString = pwd; % input for powermatching
 % folderLORETA = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\randomTrails\sLORETA_Thres10';
-folderLORETA = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\sourceData\LORETA\data\Age'; % Folder where the output of LORETA is saved;
-
-% powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\matchedSubjectNameList_FG_new.mat');
-powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\matchedSubjectNameList_A.mat');
+% folderLORETA = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\sourceData\LORETA\data\Age'; % Folder where the output of LORETA is saved;
+%InterpolatedData
+folderLORETA = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\sLORETA_Thres10\interpolatedData\decimatedData\sourceData\LORETA\data\text';
+powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\matchedSubjectNameList_FG_new.mat');
+%powerMatchedSubjectList = load ('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\matchedSubjectNameList_SG.mat');
 
 caseList = load('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\ADGammaProjectCodes\caseAgeMatchedSubjectList.mat');
 % folderSourceString = 'D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\sLORETA_Thres10';
-xyz = xlsread ('voxelInfo.xlsx');
 
-% powerMatchedSubjectList.matchedSubjectNameLists = powerMatchedSubjectList.powerMatchedSubjectNameLists;
-powerMatchedSubjectList.matchedSubjectNameLists = powerMatchedSubjectList.matchedSubjectNameList_A; 
+% Keep specific lobe voxel index value as Nan
+xyz = xlsread ('voxelInfo.xlsx');
+lobes = readtable('voxelInfo');
+lobesName = table2array(lobes(:,4));
+idxFPTO = ismember(lobesName, {'Limbic Lobe', 'Sub-lobar', 'Temporal Lobe'});
+% % % % idxSC = ismember(lobesName, {'Limbic Lobe', 'Sub-lobar'}); 
+% % % % idxT = ismember(lobesName, {'Temporal Lobe'});
+% % % % idxF = ismember(lobesName, {'Frontal Lobe'});
+
+powerMatchedSubjectList.matchedSubjectNameLists = powerMatchedSubjectList.powerMatchedSubjectNameLists;
+% powerMatchedSubjectList.matchedSubjectNameLists = powerMatchedSubjectList.matchedSubjectNameList_SG; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mandatory fixed options
@@ -176,8 +185,8 @@ for i=1:numFreqRanges
     %     gp2 = ageGroup2Pos & goodSubjectPos';
     %     gp1 = ageGroup1Pos & goodSubjectPos'& healthyPos & malePos;% & powerMatch;% & trialMatchPos;
     %     gp2 = ageGroup2Pos & goodSubjectPos'& healthyPos & malePos;% powerMatch;% & trialMatchPos;
-    gp1 = ageGroup1Pos & goodSubjectPos' & healthyPos;% & powerMatch;% & trialMatchPos;
-    gp2 = ageGroup2Pos & goodSubjectPos' & healthyPos;% & powerMatch;% & trialMatchPos;
+    gp1 = ageGroup1Pos & goodSubjectPos' & healthyPos & powerMatch;% & trialMatchPos;
+    gp2 = ageGroup2Pos & goodSubjectPos' & healthyPos & powerMatch;% & trialMatchPos;
     
     subjectNameListFinal{1} = uniqueSubjectNames(gp1);
     subjectNameListFinal{2} = uniqueSubjectNames(gp2);
@@ -210,7 +219,7 @@ for i=1:numFreqRanges
         sourceData(j).tStats = squeeze(alltStats{j}(:,i,:));
         sourceData(j).pVals = squeeze(allpVals{j}(:,i,:));
     end
-    [euDis,tStats,dataDeltaP] = displayData(hPlots(i,:),subjectNameListFinal,strList,deltaPSD,dataForDisplay.freqVals,topoData,sourceData,dataForDisplay.rangeNames{i},refType,useMedianFlag,folderLORETA,xyz);
+    [euDis,tStats,dataDeltaP] = displayData(hPlots(i,:),subjectNameListFinal,strList,deltaPSD,dataForDisplay.freqVals,topoData,sourceData,dataForDisplay.rangeNames{i},refType,useMedianFlag,folderLORETA,xyz,idxFPTO);
 end
 
 

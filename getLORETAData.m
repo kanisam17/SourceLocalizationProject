@@ -18,6 +18,7 @@ for i=1:2
         
         dataBL(j,:,:) = tmp.mDataBL; %#ok<*AGROW>
         dataST(j,:,:) = tmp.mDataST;
+%         dataDeltaP(j,:,:) = tmp.mDataDeltaP;
         tStats(j,:,:) = tmp.tStats;
         pVals(j,:,:) = tmp.pVals;
     end

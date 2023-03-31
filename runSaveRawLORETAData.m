@@ -1,10 +1,10 @@
 % folderLORETA contains all text files in sLORtoText folder.
 % 
-load('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\subjectNameListFinal.mat', 'subjectNameListFinal') % load subject list for project 
+% load('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\subjectNameListFinal.mat', 'subjectNameListFinal') % load subject list for project 
 % load('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\subjectNamesWith64elecs.mat') % load uniqueSubjectList with 64 electrodes only.
-folderStr = 'sLORETA_Thres10';
-folderLORETA = fullfile('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\',folderStr); %change folders
-folderOutput = fullfile('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\randomTrails\',folderStr);
+folderStr = 'text';
+folderLORETA = fullfile('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\sLORETA_Thres10\interpolatedData\decimatedData\AdGammaProject\',folderStr); %change folders
+folderOutput = fullfile('D:\Kanishq\NewProject\TLSAEEGProjectPrograms\decimatedData\LORETA\sLORETA_Thres10\interpolatedData\decimatedData\sourceData\LORETA\data\',folderStr);
 strList = {'mid','old'};
 
 % % % load('caseListAgeMatched.mat') % for caseControl
@@ -29,8 +29,8 @@ strList = {'mid','old'};
 
 
 %% save files
-saveRawLORETAData(subjectNameListFinal,strList,folderLORETA,folderOutput,trialIdxListFinal);
-
+% saveRawLORETAData(subjectNameListFinal,strList,folderLORETA,folderOutput,trialIdxListFinal);
+saveRawLORETAData(subjectNameListFinal,strList,folderLORETA,folderOutput);
 clc;clear
 
 % %% for control averaged against each case

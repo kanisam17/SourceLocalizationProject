@@ -21,27 +21,47 @@ meuDis = cell(1,2);
 vrbl = dataDeltaP; % dataDeltaP or tStats change variable
 for i = 1:numel(tStats)
     % Calculate the mean over the third dimension (subjects)
-    meanTStats = mean(vrbl{i}, 3);
-    meanEuDis = mean (euDis{i},3); 
+    %     meanTStats = mean(vrbl{i}, 3);
+    %     meanEuDis = mean (euDis{i},3);
+    meanTStats = median(vrbl{i}(:,:,1:end),3);
+    meanEuDis = median(euDis{i}(:,:,1:end),3);
     % Reshape the result to be numFreq x numVoxels
     mtStats{i} = reshape(meanTStats, size(meanTStats, 1), []);
     meuDis{i} = reshape(meanEuDis, size(meanEuDis, 1), []);
-    
-    
 end
+%%
+% %% Plot single outlier 
+% clear vrbl;
+% vrbl {1} = dataDeltaP{1}(:,:,:); %1:91 default
+% % removing outlier #90
+% vrbl {2} = dataDeltaP{2}(:,:,90);
+% meuDis{2} = meuDis{2}(:,:,90);
+
+
+%%
+
+% Define subject size
+clear vrbl;
+vrbl {1} = dataDeltaP{1}(:,:,:); %1:91 default
+% removing outlier #90
+% dataDeltaP{2}(:,:,90)=[];
+vrbl {2} = dataDeltaP{2}(:,:,:); % 1:127 default
+% meuDis{2}(:,:,90)=[]; 
+
 %% plot figures 
 dataForStats = cell(1,3);
-plotBinWidth = 14; plotBinLimit = 141;
-
-
-for numFreq = 1:3
+plotBinWidth = 20; plotBinLimit = 140;
+nBins = plotBinLimit/plotBinWidth;
+% vrbl = dataDeltaP; %% tStats %uncomment if previous section not define vrbl.
+for numFreq = 3 %1:3
     figure;
     for numGroup = 1:2
         colorMrkr = {[0 0 0],[0.5 0.5 0.5]};
         alphaErrorbar = 0.65; % transparency level for errorbars
         headingColor = colorMrkr;
         useMedianFlagData = true;
-        [h{numGroup},binned_Y{numGroup}] = plotIndivConnData(tStats{numGroup}(numFreq,:,:),euDis{numGroup}(numFreq,:,:),plotBinWidth,plotBinLimit,colorMrkr{numGroup},useMedianFlagData,1);
+        [h{numGroup},binned_Y{numGroup}] = plotIndivConnData(vrbl{numGroup}(numFreq,:,:),euDis{numGroup}(numFreq,:,:),plotBinWidth,plotBinLimit,colorMrkr{numGroup},useMedianFlagData,1);
+        yline(0);
         dataForStats{numFreq} = binned_Y;
         hold on
     end
@@ -50,14 +70,15 @@ end
 
 %% statistics
 % Set the confidence level
+clear p_mat p
 alpha = 0.05;
 % Get the number of frequency bands and bins
 [numFreq, numBins, ~] = size(dataForStats{1});
 % Initialize the p-value matrix
-p_mat = NaN(3, 10);%p_mat = NaN(numFreq, numBins);
+p_mat = NaN(3, nBins);%p_mat = NaN(numFreq, numBins);
 % Loop through each frequency band and bin
-for i = 1:3%numFreq
-    for j = 1:10%numBins
+for i = 3%1:3%numFreq
+    for j = 1:nBins
         data1 = squeeze(dataForStats{i}{1,1}(:,j));
         data2 = squeeze(dataForStats{i}{1,2}(:,j));
         % Concatenate the data 

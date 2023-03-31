@@ -1,4 +1,4 @@
-function displayData(hPlots,subjectNameListFinal,strList,deltaPSD,freqVals,topoData,sourceData,rangeName,refType,useMedianFlag,folderLORETA,xyz)
+function [euDis,tStats,dataDeltaP,mData] = displayData(hPlots,subjectNameListFinal,strList,deltaPSD,freqVals,topoData,sourceData,rangeName,refType,useMedianFlag,folderLORETA,xyz,idxFPTO)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% Display Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 displaySettings.fontSizeLarge = 10; displaySettings.tickLengthMedium = [0.025 0];
@@ -9,7 +9,7 @@ displaySettings.colorNames = colorNames;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 titleStr = [rangeName ', ' strList{1} '(' num2str(length(subjectNameListFinal{1})) '),' strList{2} '(' num2str(length(subjectNameListFinal{2})) ')'];
-cLims = [-1.25 1.25];
+cLims = [-1 1]; %cLims = [-1.25 1.25];
 
 % deltaPSD
 displayAndcompareData(hPlots(1),deltaPSD,freqVals,displaySettings,cLims,1,useMedianFlag);
@@ -122,72 +122,9 @@ disp([rangeName ', p=' num2str(pList)]);
 
 % % plot percentSignificant vs euclidian distance from peak. #added by kan
 % 
-[euDis, tStats]= euDistanceForLORETA(folderLORETA,subjectNameListFinal,strList,xyz,1);
-% %figure for euclidian distance binned; % remove if nesting in other code #kan
-% plotBinWidth = 20; plotBinLimit = 141;
-% 
-% for freqRange = 1:3 % choose the frequency range
-%     
-%     a{1} = mean(tStats{1}(freqRange,:,:),3); a{2} = mean(tStats{2}(freqRange,:,:),3);
-%     mtStats= a; clear a;
-%     
-%     c{1} = euDis{1}(freqRange,:,1); c{2} = euDis{2}(freqRange,:,1);
-%     meuDis = c; clear c;
-%     
-%     for numGroup = 1:2
-%         colorMrkr = {[0 0 0],[0.5 0.5 0.5]};
-%         alphaErrorbar = 0.65; % transparency level for errorbars
-%         headingColor = colorMrkr;
-%         useMedianFlagData = true;
-%         
-%         [h{numGroup},binned_Y{numGroup}] = plotIndivConnData(mtStats{numGroup},meuDis{numGroup},plotBinWidth,plotBinLimit,colorMrkr{numGroup},useMedianFlagData,1);
-%         hold on
-%     end
-%     
-% end 
-%     function [h,mean_binY1] = plotIndivConnData(mtStats,meuDis,binWidth,binLimit,colorMrkr,medianFlag,plotSwitch)
-%     if ~exist('plotSwitch','var');    plotSwitch = 1;       end
-%     connectDiscrete =  '-o';
-%     DiscreteVisibility = 'on';
-%     binEdges = 0:binWidth:binLimit;
-%     nbins = length(binEdges)-1;
-%     binned_bin_meuDis = binEdges(1:end-1)+(binWidth/2);
-%     
-%     
-%     mean_binY1 = zeros(1,nbins); %%default mean_binY1 = zeros(nsubjects,nbins);
-%     
-%     binned_meuDis = discretize(meuDis,binEdges); %%binned_meuDis = discretize(meuDis(:,i),binEdges);
-%     binned_mtStats = cell(1,nbins);
-%     for b = 1:nbins % number of bins
-%         binned_mtStats{b} = mtStats(binned_meuDis == b);
-%     end
-%     if(medianFlag)
-%         %     median_binned_binY = nanmedian(mean_binY1,1);
-%         mSEM = @(data)std(bootstrp(1000,@nanmedian,data));
-%     else
-%         %     median_binned_binY = nanmean(mean_binY1,1);
-%         mSEM = @(data)std(bootstrp(1000,@nanmean,data));
-%     end
-%     if(medianFlag)
-%         mean_binY1 = cellfun(@nanmedian,binned_mtStats); % Note:add if bin value is empty,dont assign SEM.
-%         std_binned_binY= cellfun(mSEM,binned_mtStats);
-%     else
-%         mean_binY1 = cellfun(@nanmean,binned_mtStats);
-%         std_binned_binY= cellfun(mSEM,binned_mtStats);
-%     end
-%     
-%     median_binned_binY = mean_binY1;
-%     
-%     if(plotSwitch)
-%         if(length(std_binned_binY)==1)
-%             h = errorbar(binned_bin_meuDis,median_binned_binY,nan(1,8),connectDiscrete,'Color',colorMrkr,'MarkerFaceColor','w','LineWidth',1.5,'HandleVisibility',DiscreteVisibility);
-%         else
-%             h = errorbar(binned_bin_meuDis,median_binned_binY,std_binned_binY,connectDiscrete,'Color',colorMrkr,'MarkerFaceColor','w','LineWidth',1.5,'HandleVisibility',DiscreteVisibility);
-%         end
-%     else
-%         h = [];
-%     end
-%     end
+% [euDis, tStats, meuDis, dataDeltaP, mtStats]= euDistanceForLORETA(folderLORETA,subjectNameListFinal,strList,xyz,1);
+[euDis,tStats,dataDeltaP]= euDistanceForLORETA(folderLORETA,subjectNameListFinal,strList,xyz,0,idxFPTO);
+
 end
 
 

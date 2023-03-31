@@ -1,4 +1,4 @@
-function matchedSubjectNameLists = getPowerMatchedSubjectList(folderSourceString,subjectNameListFinal,projectName,refType,protocolType,freqBand)
+function matchedSubjectNameLists = getPowerMatchedSubjectList(folderSourceString,subjectNameListFinal,projectName,refType,protocolType)
 
 powerMatchingBinWidth = 0.5; % dB
 dataForDisplay{1} = combineAnalyzedData(folderSourceString,subjectNameListFinal{1},projectName,refType,protocolType);

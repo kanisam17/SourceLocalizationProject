@@ -1,5 +1,5 @@
-function [euDis, tStats, meuDis, mtStats]= euDistanceForLORETA(folderLORETA,subjectNameListFinal,strList,xyz,useMedianFlag)
-% 1. Find euclidian distance 'euDis' from the highest activated voxel to all
+function [euDis,tStats,dataDeltaP]= euDistanceForLORETA(folderLORETA,subjectNameListFinal,strList,xyz,useMedianFlag,idxFPTO)
+%{ 1. Find euclidian distance 'euDis' from the highest activated voxel to all
 % other voxels.
 % 2. The euDis = sqrt(sum((A - B) .^ 2)) where A is the max activated voxel
 % coordinates(X0,Y0,Z0) and B is corrdinates of other voxel(X1,Y1,Z1).
@@ -12,8 +12,7 @@ function [euDis, tStats, meuDis, mtStats]= euDistanceForLORETA(folderLORETA,subj
 % clear;clc
 % folderLORETA = 'N:\Projects\Kanishka_SourceLocalizationProject\data\sLORETA_Thres10';
 % numGroups = {'mid','old'};
-% xyz = xlsread ('voxelInfo.xlsx');
-
+% xyz = xlsread ('voxelInfo.xlsx');%}
 
 %% Subject Listing 1. All Subject thresh-10
 % for i = 1:size(strList,2)
@@ -33,41 +32,61 @@ for i = 1:length(strList)
         g{i}{j} = [temp{i}{j} '.mat'];
         tempM = load(fullfile(folderLORETA,strList{i},g{i}{j}),'tStats');
         temp1(:,:,j) = tempM.tStats;
+        
+        tempBL = load(fullfile(folderLORETA,strList{i},g{i}{j}),'mDataBL');%added by Kan 20/02/2023
+        tempST = load(fullfile(folderLORETA,strList{i},g{i}{j}),'mDataST');%added by Kan 20/02/2023
+        deltaP(:,:,j) = 10*(log10(tempST.mDataST) - log10(tempBL.mDataBL));%added by Kan 20/02/2023
     end
     tStats{i} = temp1;
-%     
-%     if useMedianFlag
-%         tStats{i} = median(temp1,3);
-%     else
-%         tStats{i} = mean(temp1,3); 
-%      end
+    dataDeltaP{i} = deltaP;
+    %
+    %     if useMedianFlag
+    %         tStats{i} = median(temp1,3);
+    %     else
+    %         tStats{i} = mean(temp1,3);
+    %      end
     
 end
 
 
 %% calualate euDis
+vrbl = dataDeltaP; % dataDeltaP/tStats, change the vrbl to define euDis.
 for i = 1:length(strList)
     if useMedianFlag
-        tempV = median(tStats{i}, 3);
+        tempV{i} = median(vrbl{i}, 3);
     else
-        tempV = mean(tStats{i}, 3);
-    end
-    [~, maxPosition] = (max(tempV,[],2));
-    %position=squeeze(position);
-    
-    [~, minPosition] = (min(tempV,[],2));
-    
-    position = [minPosition(1);maxPosition(2:3)];
-    
-    for j = 1:3 %(freqType)
-        for k = 1:length(subjectNameListFinal{i}) %%%%%%temp
-            a = position(j,:);
-            rept = repmat(xyz(a,:),[6239,1]); % create matrix of repeted xyz coordinates
-            euDis{i}(j,:,k)= sqrt(sum((rept - xyz).^ 2,2));
-        end
-        
+        tempV{i} = mean(vrbl{i}, 3);
     end
 end
+
+for i = 1:length(strList)
+    tempV{i}(idxFPTO) = NaN; %% make all sub lobar, limbic,frontal(optional) values as Nan
+%     tempV{i}(idxT) = NaN; %% make all temporal(optional) values as Nan
+%     tempV{i}(idxF) = NaN; %% make all frontal(optional) values as Nan
+end
+
+%% Concatenating method for euDis
+catTempV = cat(2,tempV{:}); % concatenation of all subjects data
+[~, maxPosition] = (max(catTempV,[],2));
+%position=squeeze(position);
+[~, minPosition] = (min(catTempV,[],2));
+position = [minPosition(1);maxPosition(2:3)];
+reptxyz = [xyz;xyz];
+
+%%
+
+for i = 1:length(strList)
+    for j = 1:3%(freqType)
+        for k = 1:length(subjectNameListFinal{i}) %%%%%%temp
+            a = position(j,:);
+            
+            rept = repmat(reptxyz(a,:),[6239,1]); % create matrix of repeted xyz coordinates
+            euDis{i}(j,:,k)= sqrt(sum((rept - xyz).^ 2,2));
+        end
+    end
+end
+
+
 
 
 % plot euDis to tStats
@@ -77,15 +96,15 @@ z1 = mean(tStats{1,2},3);
 u = mean(euDis{1,1},3);
 u1 = mean(euDis{1,2},3);
 
-mtStats{1} = z; mtStats{2} = z1;
-meuDis{1} =  u; meuDis{2} = u1;
+% mtStats{1} = z; mtStats{2} = z1;
+% meuDis{1} =  u; meuDis{2} = u1;
 clear z z1 u u1;
 
 % % % % % %% Plot%%
-% for i=1:2%numGroups
-%      for j = 1%:3%numFreqRanges
-%          scatter(meuDis{1}(j,:), mtStats{1}(j,:),'r','Parent',hPlots(j,9));hold on
-%          scatter(meuDis{2}(j,:), mtStats{2}(j,:),'k','Parent',hPlots(j,9));
-%      end
-%  end
+% % for i=1:2%numGroups
+% %      for j = 1%:3%numFreqRanges
+% %          scatter(meuDis{1}(j,:), mtStats{1}(j,:),'r','Parent',hPlots(j,9));hold on
+% %          scatter(meuDis{2}(j,:), mtStats{2}(j,:),'k','Parent',hPlots(j,9));
+% %      end
+% %  end
 
