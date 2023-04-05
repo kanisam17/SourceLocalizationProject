@@ -7,8 +7,6 @@ function [trialIdxAllSub,subjectNamesOnly,subNameIdx,goodProtFlag] = getTrialIdx
 files = dir(fullfile(folderSourceString, projectName, protocolType, '*.mat')); 
 % files= files(3:end);% to select only subject mat files
 
-% 
-
 for i = 1:length(files)
     file_lengths(i) = length(files(i).name);
 end
@@ -24,7 +22,7 @@ for i = 1:length(files)
     data = load(fullfile(files(i).folder, files(i).name));
     %     for j = 1:length(data.trialIdx)
     try
-        trialIdxAllSub{i} = data.trialIdx;
+        trialIdxAllSub{i} = data.trialIdx; % WSK: mention what this describes
     catch
     end
     subjectNamesOnly{i} = filenames{i}(1:(index{i}-2));
