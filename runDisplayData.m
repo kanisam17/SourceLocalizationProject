@@ -150,19 +150,18 @@ for i=1:numFreqRanges
         subjectNameListFinal{2} = uniqueSubjectNames(gp2);
         
         deltaPSD{1} = dataDeltaPSD(gp1,:);
-    deltaPSD{2} = dataDeltaPSD(gp2,:);
-    if useMedianFlag
-        topoData{1} = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,gp1),3));
-        topoData{2} = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,gp2),3));
-    else
-        topoData{1} = squeeze(nanmean(dataForDisplay.powerDBTopoAllSubjects(:,i,gp1),3));
-        topoData{2} = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,gp2),3));
-    end
-    
+        deltaPSD{2} = dataDeltaPSD(gp2,:);
+        if useMedianFlag
+            topoData{1} = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,gp1),3));
+            topoData{2} = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,gp2),3));
+        else
+            topoData{1} = squeeze(nanmean(dataForDisplay.powerDBTopoAllSubjects(:,i,gp1),3));
+            topoData{2} = squeeze(nanmedian(dataForDisplay.powerDBTopoAllSubjects(:,i,gp2),3));
+        end
     else % 'casevscontrol'
         subjectNameListFinal = getCaseControlList(uniqueSubjectNames,cdrList,ageList,genderList);
         
-%         deltaPSD
+%         deltaPSD = 
         
 %         topoData
     end
